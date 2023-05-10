@@ -1,0 +1,26 @@
+TODO-List Exercise 1
+---------------------
+
+* PROBLEM 1
+- Calculate magnetic susceptability using fluctuations @ T>T_c && T<T_c
+- Plot magn. susc. VS T and find T_c(L) by finding the max
+- Plot T_c(L) VS 1/T and find T_c(inf)
+(- Evaluate M VS T near T_c and find critical exponent beta)
+- Calculate magnetization per spin m(T) for system size L below Tc(L), and then fitting it to m ∼ (Tc(L) − T)**β on log-log
+
+* PROBLEM 2
+- For same system sizes and temps, find the magn. susc. from fluctuations using the Wolff algo
+
+* PROBLEM 3
+- Design a Wolff-like algo for next-NN and show detailed balance is maintained
+- Show how to design a Wolff algo for 2D-Ising in magnetic field
+- Show how to design a Wolff algo & Metropolis alog for XY-Model
+- Show how to construct a heat bath algorithm for the q-state Potts model in two dimensions
+- Observe the difference between the transition for a 3 & 5-state Potts-model
+
+* PROBLEM 4
+- Show that the equations are balanced
+- Sum up equations to get a rate equations, what are the differences with the original
+- What should be P(N) so that the rate equations are the same
+- Solve the equation using the generating function and its derivative
+- Explain why if <N> is small, the rate equation results are not the same as for the master equation

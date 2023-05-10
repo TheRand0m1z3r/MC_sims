@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.random import default_rng
 from scipy.constants import k
+import matplotlib.pyplot as plt
 
 rng = default_rng()
 
@@ -52,10 +53,13 @@ def metropolis(starting_model, L, J, T, it):
 
 
 if __name__ == '__main__':
-    L = int(1e2)
+    L = 1e2
     starting_model = (rng.random([int(L), int(L)]) < 0.5) * 2 - 1
+    M_start = np.sum(starting_model)
     J = 1
     it = int(1e7)
+    # Tc = 2J / (k * np.log(1 + np.sqrt(2)))
     T = 300
+    # t = (T - Tc) / Tc
     E_start = total_energy(starting_model, L, J)
     eq_model, E_tot = metropolis(starting_model, L, J, T, it)
