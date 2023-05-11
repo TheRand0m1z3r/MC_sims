@@ -14,7 +14,11 @@ def total_energy(model, L, J=1):
     return tot_e
 
 
-def flipper(model, spin, acceptor, energy, T):
+def find_equil_time(starting_model, J, T):
+    return
+
+
+def flipper(model, spin, acceptor, energy, T, M):
     vec = [[1, 0], [-1, 0], [0, 1], [0, -1]]
     nn = spin+vec
     e_diff = 0
@@ -28,28 +32,31 @@ def flipper(model, spin, acceptor, energy, T):
     if e_diff <= 0:
         # temp_model = np.copy(model)
         model[*spin] *= -1
-        return model, energy + e_diff
+        return model, energy + e_diff, M + model[*spin]
     else:
         boltz_prob = np.exp(-e_diff / (k * T))
         if boltz_prob > acceptor:
             # temp_model = np.copy(model)
             model[*spin] *= -1
-            return model, energy + e_diff
+            return model, energy + e_diff, M + model[*spin]
         else:
-            return model, energy
+            return model, energy, M
 
 
-
-def metropolis(starting_model, L, J, T, it):
+def metropolis(starting_model, L, J, T, it, M_start):
     sys_energy = total_energy(starting_model, L, J)
+    ## Finding equilibration time
+    equilibrated = False
+    while not equilibrated:
+        equilibrated = find_equil_time(starting_model, J, T)
     spin_choice = rng.integers(L, size=[it, 2])
     accept_values = rng.random(it)
-    eq_model, sys_energy = flipper(starting_model, spin_choice[0], accept_values[0], sys_energy, T)
+    eq_model, sys_energy, M = flipper(starting_model, spin_choice[0], accept_values[0], sys_energy, T, M_start)
     loop = 1
     for spin in spin_choice[1:]:
-        eq_model, sys_energy = flipper(eq_model, spin, accept_values[loop], sys_energy, T)
+        eq_model, sys_energy, M = flipper(eq_model, spin, accept_values[loop], sys_energy, T, M)
         loop += 1
-    return eq_model, sys_energy
+    return eq_model, sys_energy, M
 
 
 if __name__ == '__main__':
@@ -62,4 +69,4 @@ if __name__ == '__main__':
     T = 300
     # t = (T - Tc) / Tc
     E_start = total_energy(starting_model, L, J)
-    eq_model, E_tot = metropolis(starting_model, L, J, T, it)
+    eq_model, E_tot, M = metropolis(starting_model, L, J, T, it, M_start)
