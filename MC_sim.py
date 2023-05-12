@@ -1,10 +1,26 @@
 import numpy as np
 from numpy.random import default_rng
-from scipy.constants import k
 import matplotlib.pyplot as plt
+# from scipy.constants import k
 
 rng = default_rng()
+k = 1
 
+class IsingModel:
+    def __init__(self, T, J, L, it):
+        self.starting_model = (rng.random([int(L), int(L)]) < 0.5) * 2 - 1
+        self.model = np.zeros([int(L), int(L)])
+        self.M_start = np.sum(self.starting_model)
+        self.magnet = 0
+        self.J = J
+        self.T_c = 2*J / (k * np.log(1 + np.sqrt(2)))
+        self.t = (T - self.T_c) / self.T_c
+        # self.E_start = total_energy(self.starting_model, L, J)
+        self.energy = 0
+        if it:
+            self.iter = it
+        else:
+            self.iter = int(1e6)
 
 def total_energy(model, L, J=1):
     tot_e = 0
@@ -60,8 +76,8 @@ def metropolis(starting_model, L, J, T, it, M_start):
 
 
 if __name__ == '__main__':
-    L = 1e2
-    starting_model = (rng.random([int(L), int(L)]) < 0.5) * 2 - 1
+    L = int(1e2)
+    starting_model = (rng.random([L, L]) < 0.5) * 2 - 1
     M_start = np.sum(starting_model)
     J = 1
     it = int(1e7)
