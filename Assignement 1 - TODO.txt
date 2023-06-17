@@ -2,7 +2,7 @@ TODO-List Exercise 1
 ---------------------
 
 * PROBLEM 1
-- Calculate magnetic susceptability using fluctuations @ T>T_c && T<T_c
+- Calculate magnetic susceptibility using fluctuations @ T>T_c && T<T_c
 - Plot magn. susc. VS T and find T_c(L) by finding the max
 - Plot T_c(L) VS 1/T and find T_c(inf)
 (- Evaluate M VS T near T_c and find critical exponent beta)
