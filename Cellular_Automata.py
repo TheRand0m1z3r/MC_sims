@@ -117,60 +117,74 @@ def simulate_RW(L, iterations):
 if __name__ == '__main__':
     print("Lets go!")
     # ## Exercise 1:
-    # L_lane = 1000
-    # N_cars = [100, 200, 333, 500]
-    # v_max = 2
-    # iter_traffic = 2500
-    # rand_slow = 0.05
-    # for N in N_cars:
-    #     road, flux = NS_Algo(L_lane, N, v_max, iter_traffic)
-    #
-    #     plt.figure()
-    #     plt.pcolormesh(road)
-    #     plt.title("N = " + str(N) + " cars")
-    #     plt.ylabel("Time")
-    #     plt.xlabel("Road")
-    #     plt.savefig(str(N) + "_cars_no_slowing.png")
-    #     plt.close()
-    #
-    #     plt.figure()
-    #     plt.plot(flux)
-    #     plt.title("flux vs time, N = " + str(N) + " cars, no slowing")
-    #     plt.ylabel("flux")
-    #     plt.xlabel("time")
-    #     plt.savefig(str(N) + "_cars_flux_no_slowing.png")
-    #     plt.close()
-    #
-    #     road, flux = NS_Algo(L_lane, N, v_max, iter_traffic, rand_slow)
-    #
-    #     plt.figure()
-    #     plt.pcolormesh(road)
-    #     plt.title("N = " + str(N) + " cars")
-    #     plt.ylabel("Time")
-    #     plt.xlabel("Road")
-    #     plt.savefig(str(N) + "_cars_rand_" + str(rand_slow) + ".png")
-    #     plt.close()
-    #
-    #     plt.figure()
-    #     plt.plot(flux)
-    #     plt.title("flux vs time, N = " + str(N) + " cars, rand_slow = " + str(rand_slow))
-    #     plt.ylabel("flux")
-    #     plt.xlabel("time")
-    #     plt.savefig(str(N) + "_cars_flux_rand_" + str(rand_slow) + ".png")
-    #     plt.close()
-    #
-    # print("Done with traffic jams!")
-    #
-    # ## Exercise 2:
-    # y_min = 0.1
-    # alpha = 1.5
-    # N = 5000
-    # y = test_power_distribution(y_min, alpha, N)
-    #
-    # print("Done with power distribution!")
+    L_lane = 1000
+    N_cars = np.array([100, 200, 333, 500, 666, 800, 900])
+    v_max = 2
+    iter_traffic = 2500
+    rand_slow = 0.05
+    means_no_slowing = np.zeros(len(N_cars))
+    means_slowing = np.zeros(len(N_cars))
+    for N in N_cars:
+        road, flux = NS_Algo(L_lane, N, v_max, iter_traffic)
+        means_no_slowing[np.where(N_cars == N)] = np.mean(flux)
+
+        plt.figure()
+        plt.pcolormesh(road)
+        plt.title("N = " + str(N) + " cars")
+        plt.ylabel("Time")
+        plt.xlabel("Road")
+        plt.savefig(str(N) + "_cars_no_slowing.png")
+        plt.close()
+
+        plt.figure()
+        plt.plot(flux)
+        plt.title("flux vs time, N = " + str(N) + " cars, no slowing")
+        plt.ylabel("flux")
+        plt.xlabel("time")
+        plt.savefig(str(N) + "_cars_flux_no_slowing.png")
+        plt.close()
+
+        road, flux = NS_Algo(L_lane, N, v_max, iter_traffic, rand_slow)
+        means_slowing[np.where(N_cars == N)] = np.mean(flux)
+
+        plt.figure()
+        plt.pcolormesh(road)
+        plt.title("N = " + str(N) + " cars")
+        plt.ylabel("Time")
+        plt.xlabel("Road")
+        plt.savefig(str(N) + "_cars_rand_" + str(rand_slow) + ".png")
+        plt.close()
+
+        plt.figure()
+        plt.plot(flux)
+        plt.title("flux vs time, N = " + str(N) + " cars, rand_slow = " + str(rand_slow))
+        plt.ylabel("flux")
+        plt.xlabel("time")
+        plt.savefig(str(N) + "_cars_flux_rand_" + str(rand_slow) + ".png")
+        plt.close()
+
+    plt.figure()
+    plt.plot(N_cars/L_lane, means_no_slowing, label="No slowing")
+    plt.plot(N_cars/L_lane, means_slowing, label="Slowing")
+    plt.title("flux vs density")
+    plt.ylabel("flux")
+    plt.xlabel("density")
+    plt.legend()
+    plt.savefig("flux_vs_density.png")
+    plt.show()
+
+    print("Done with traffic jams!")
+
+    ## Exercise 2:
+    y_min = 0.1
+    alpha = 1.5
+    N = 5000
+    y = test_power_distribution(y_min, alpha, N)
+
+    print("Done with power distribution!")
 
     ## Exercise 3:
     L_RW = 50
-    iter_RW = 1000
+    iter_RW = 10
     time = simulate_RW(L_RW, iter_RW)
     mean_time = np.mean(time)
