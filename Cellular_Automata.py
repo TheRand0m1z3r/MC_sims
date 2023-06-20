@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import simpson
+from scipy.linalg import solve
 
 rng = np.random.default_rng()
 
@@ -119,14 +120,20 @@ if __name__ == '__main__':
     # ## Exercise 1:
     L_lane = 1000
     N_cars = np.array([100, 200, 333, 500, 666, 800, 900])
+    v = np.linspace(0, 2, 3)
     v_max = 2
     iter_traffic = 2500
     rand_slow = 0.05
+
     means_no_slowing = np.zeros(len(N_cars))
     means_slowing = np.zeros(len(N_cars))
+    flux_no_slowing = np.zeros([len(N_cars), iter_traffic])
+    flux_slowing = np.zeros([len(N_cars), iter_traffic])
+    flux_linalg = np.zeros(len(N_cars))
+    conc = np.zeros([len(N_cars), 3])
     for N in N_cars:
-        road, flux = NS_Algo(L_lane, N, v_max, iter_traffic)
-        means_no_slowing[np.where(N_cars == N)] = np.mean(flux)
+        road, flux_no_slowing[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic)
+        means_no_slowing[np.where(N_cars == N)] = np.mean(flux_no_slowing[np.where(N_cars == N)])
 
         plt.figure()
         plt.pcolormesh(road)
@@ -137,15 +144,15 @@ if __name__ == '__main__':
         plt.close()
 
         plt.figure()
-        plt.plot(flux)
+        plt.plot(flux_no_slowing)
         plt.title("flux vs time, N = " + str(N) + " cars, no slowing")
         plt.ylabel("flux")
         plt.xlabel("time")
         plt.savefig(str(N) + "_cars_flux_no_slowing.png")
         plt.close()
 
-        road, flux = NS_Algo(L_lane, N, v_max, iter_traffic, rand_slow)
-        means_slowing[np.where(N_cars == N)] = np.mean(flux)
+        road, flux_slowing[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic, rand_slow)
+        means_slowing[np.where(N_cars == N)] = np.mean(flux_slowing[np.where(N_cars == N)])
 
         plt.figure()
         plt.pcolormesh(road)
@@ -156,16 +163,35 @@ if __name__ == '__main__':
         plt.close()
 
         plt.figure()
-        plt.plot(flux)
+        plt.plot(flux_slowing)
         plt.title("flux vs time, N = " + str(N) + " cars, rand_slow = " + str(rand_slow))
         plt.ylabel("flux")
         plt.xlabel("time")
         plt.savefig(str(N) + "_cars_flux_rand_" + str(rand_slow) + ".png")
         plt.close()
 
+        c = N / L_lane
+        d = 1 - c
+        # d_1 = 1
+        # d_2 = 2
+
+        solve_mat = np.array([[0, d * (1 - rand_slow), -c - d * rand_slow],
+                              [d * (1 - rand_slow), -c - d * (1 - rand_slow) - d * rand_slow, -c - d * rand_slow],
+                              [-d * (1 - rand_slow), c + d * rand_slow, c]])
+
+        # solve_mat = np.array([[0, d_2 * (1-rand_slow), -c - d_1*rand_slow],
+        #                       [d_1*(1 - rand_slow), -c - d_2 * (1 - rand_slow) - d_1 * rand_slow, -c - d_1*rand_slow],
+        #                       [-d_1*(1 - rand_slow), c + d_1 * rand_slow, c]])
+
+        conc[[np.where(N_cars == N)]] = solve(solve_mat, np.array([0, 0, 0]))
+
+
+    flux_linalg = np.sum(conc *  v_max, axis=1)
+
     plt.figure()
     plt.plot(N_cars/L_lane, means_no_slowing, label="No slowing")
     plt.plot(N_cars/L_lane, means_slowing, label="Slowing")
+    plt.plot(N_cars/L_lane, flux_linalg, label="Rate equations")
     plt.title("flux vs density")
     plt.ylabel("flux")
     plt.xlabel("density")
