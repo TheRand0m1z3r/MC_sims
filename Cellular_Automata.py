@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import simpson
-from scipy.linalg import solve
+from scipy.linalg import lstsq
+from scipy.optimize import nnls
 
 rng = np.random.default_rng()
 
@@ -131,6 +132,7 @@ if __name__ == '__main__':
     flux_slowing = np.zeros([len(N_cars), iter_traffic])
     flux_linalg = np.zeros(len(N_cars))
     conc = np.zeros([len(N_cars), 3])
+
     for N in N_cars:
         road, flux_no_slowing[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic)
         means_no_slowing[np.where(N_cars == N)] = np.mean(flux_no_slowing[np.where(N_cars == N)])
@@ -183,7 +185,7 @@ if __name__ == '__main__':
         #                       [d_1*(1 - rand_slow), -c - d_2 * (1 - rand_slow) - d_1 * rand_slow, -c - d_1*rand_slow],
         #                       [-d_1*(1 - rand_slow), c + d_1 * rand_slow, c]])
 
-        conc[[np.where(N_cars == N)]] = solve(solve_mat, np.array([0, 0, 0]))
+        conc[np.where(N_cars == N)] = nnls(solve_mat, np.array([0, 0, 0]))[0]
 
 
     flux_linalg = np.sum(conc *  v_max, axis=1)
@@ -201,16 +203,16 @@ if __name__ == '__main__':
 
     print("Done with traffic jams!")
 
-    ## Exercise 2:
-    y_min = 0.1
-    alpha = 1.5
-    N = 5000
-    y = test_power_distribution(y_min, alpha, N)
-
-    print("Done with power distribution!")
-
-    ## Exercise 3:
-    L_RW = 50
-    iter_RW = 10
-    time = simulate_RW(L_RW, iter_RW)
-    mean_time = np.mean(time)
+    # ## Exercise 2:
+    # y_min = 0.1
+    # alpha = 1.5
+    # N = 5000
+    # y = test_power_distribution(y_min, alpha, N)
+    #
+    # print("Done with power distribution!")
+    #
+    # ## Exercise 3:
+    # L_RW = 50
+    # iter_RW = 10
+    # time = simulate_RW(L_RW, iter_RW)
+    # mean_time = np.mean(time)
