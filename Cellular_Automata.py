@@ -6,7 +6,8 @@ from scipy.optimize import nnls
 
 rng = np.random.default_rng()
 
-def NS_Algo(L, N_cars, v_max, iterations, rand_slow=0):
+
+def NS_Algo(L, N_cars, v_max, iterations, P=.0):
     def build_road(iters, L, N_cars):
         road = np.zeros([iters, L])
         road[0, :N_cars] = 1
@@ -53,7 +54,7 @@ def NS_Algo(L, N_cars, v_max, iterations, rand_slow=0):
         v[t, :] = np.minimum(v[t, :], d[t-1, :])
         ## Randomization
         randomize = rng.random([L])
-        v[t, randomize < rand_slow] = np.maximum(v[t, randomize < rand_slow] - 1, 0)
+        v[t, randomize < P] = np.maximum(v[t, randomize < P] - 1, 0)
         ## Car motion
         road[t, :], v[t, :] = move_cars(road[t-1, :], v[t, :])
         d[t, :] = find_empty_cells_in_front_of_car(d[t, :], road[t, :], L)
@@ -61,6 +62,7 @@ def NS_Algo(L, N_cars, v_max, iterations, rand_slow=0):
         flux[t] = (np.sum(v[t, :] == 1) + 2 * np.sum(v[t, :] == 2)) / L
 
     return road, flux
+
 
 def power_distribution(y_min, alpha, N=1):
     ## This returns a power distribution with a minimum value of y_min and a power of alpha
@@ -70,6 +72,7 @@ def power_distribution(y_min, alpha, N=1):
     y = (1 / (y_min**(-alpha) - (alpha/k) * x))**(1/alpha)
 
     return y
+
 
 def test_power_distribution(y_min, alpha, N=10000):
     ## This tests the power distribution function by plotting a histogram of the results
@@ -90,6 +93,7 @@ def test_power_distribution(y_min, alpha, N=10000):
     # plt.savefig("Power_Distribution_Histogram.png")
     plt.show()
     # plt.close()
+
 
 def simulate_RW(L, iterations):
     # moves = rng.choice([-1, 1], size=iterations)
@@ -116,6 +120,31 @@ def simulate_RW(L, iterations):
 
     return t
 
+
+def sand_pile_model(L, max_grain=3, iterations=1000):
+    ## This function simulates the sand pile model on a lattice of size m x n
+
+    def topple(lattice, y, x, outer_border_x=False, outer_border_y=False):
+        ## This function topples the lattice at a given site with open boundary conditions
+
+        if not (outer_border_x & outer_border_y):
+            lattice[y+1, x] += 1
+            lattice[y-1, x] += 1
+            lattice[y, x+1] += 1
+            lattice[y, x-1] += 1
+            ## To be continued
+        return lattice
+
+    lattice = np.zeros([L, L])
+    dump_sites = rng.integers(0, L, size=[iterations, 2]) # First column is y, second column is x
+
+    for i in range(iterations):
+        lattice[*dump_sites[i]] += 1
+        if lattice[*dump_sites[i]] > max_grain:
+            lattice[*dump_sites[i]] -= max_grain + 1
+            lattice = topple(lattice, *dump_sites[i])
+    return
+
 if __name__ == '__main__':
     print("Lets go!")
     # ## Exercise 1:
@@ -123,8 +152,8 @@ if __name__ == '__main__':
     N_cars = np.array([100, 200, 333, 500, 666, 800, 900])
     v = np.linspace(0, 2, 3)
     v_max = 2
-    iter_traffic = 2500
-    rand_slow = 0.05
+    iter_traffic = 1500
+    P = 0.05
 
     means_no_slowing = np.zeros(len(N_cars))
     means_slowing = np.zeros(len(N_cars))
@@ -134,7 +163,7 @@ if __name__ == '__main__':
     conc = np.zeros([len(N_cars), 3])
 
     for N in N_cars:
-        road, flux_no_slowing[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic)
+        road, flux_no_slowing[np.where(N_cars == N), :] = NS_Algo(L_lane, N, v_max, iter_traffic)
         means_no_slowing[np.where(N_cars == N)] = np.mean(flux_no_slowing[np.where(N_cars == N)])
 
         plt.figure()
@@ -146,14 +175,14 @@ if __name__ == '__main__':
         plt.close()
 
         plt.figure()
-        plt.plot(flux_no_slowing)
+        plt.plot(flux_no_slowing[np.where(N_cars == N)][0])
         plt.title("flux vs time, N = " + str(N) + " cars, no slowing")
         plt.ylabel("flux")
         plt.xlabel("time")
         plt.savefig(str(N) + "_cars_flux_no_slowing.png")
         plt.close()
 
-        road, flux_slowing[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic, rand_slow)
+        road, flux_slowing[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic, P)
         means_slowing[np.where(N_cars == N)] = np.mean(flux_slowing[np.where(N_cars == N)])
 
         plt.figure()
@@ -161,34 +190,28 @@ if __name__ == '__main__':
         plt.title("N = " + str(N) + " cars")
         plt.ylabel("Time")
         plt.xlabel("Road")
-        plt.savefig(str(N) + "_cars_rand_" + str(rand_slow) + ".png")
+        plt.savefig(str(N) + "_cars_rand_" + str(P) + ".png")
         plt.close()
 
         plt.figure()
-        plt.plot(flux_slowing)
-        plt.title("flux vs time, N = " + str(N) + " cars, rand_slow = " + str(rand_slow))
+        plt.plot(flux_slowing[np.where(N_cars == N)][0])
+        plt.title("flux vs time, N = " + str(N) + " cars, P = " + str(P))
         plt.ylabel("flux")
         plt.xlabel("time")
-        plt.savefig(str(N) + "_cars_flux_rand_" + str(rand_slow) + ".png")
+        plt.savefig(str(N) + "_cars_flux_rand_" + str(P) + ".png")
         plt.close()
 
+        ## Calculate expected from mean-field theory (Schreckenberg, 1995, Phys. Rev, E 51, 2939)
         c = N / L_lane
         d = 1 - c
-        # d_1 = 1
-        # d_2 = 2
+        q = 1 - P
+        
+        conc[np.where(N_cars == N), 0] = c**2 * (1 + P * d)/(1 - P * d**2)
+        conc[np.where(N_cars == N), 1] = q *c**2 *d * (1 + d + P * d**2)/((1 - P * d**3) * (1 - P * d**2))
+        conc[np.where(N_cars == N), 2] = q**2 * c**2 * d**3 * (1 + d + d**2 * P)/((1 - q * d**2) * (1 - P * d**3) *
+                                                                                   (1 - P * d**2))
 
-        solve_mat = np.array([[0, d * (1 - rand_slow), -c - d * rand_slow],
-                              [d * (1 - rand_slow), -c - d * (1 - rand_slow) - d * rand_slow, -c - d * rand_slow],
-                              [-d * (1 - rand_slow), c + d * rand_slow, c]])
-
-        # solve_mat = np.array([[0, d_2 * (1-rand_slow), -c - d_1*rand_slow],
-        #                       [d_1*(1 - rand_slow), -c - d_2 * (1 - rand_slow) - d_1 * rand_slow, -c - d_1*rand_slow],
-        #                       [-d_1*(1 - rand_slow), c + d_1 * rand_slow, c]])
-
-        conc[np.where(N_cars == N)] = nnls(solve_mat, np.array([0, 0, 0]))[0]
-
-
-    flux_linalg = np.sum(conc *  v_max, axis=1)
+    flux_linalg = np.sum(conc * v, axis=1)
 
     plt.figure()
     plt.plot(N_cars/L_lane, means_no_slowing, label="No slowing")
@@ -203,16 +226,18 @@ if __name__ == '__main__':
 
     print("Done with traffic jams!")
 
-    # ## Exercise 2:
-    # y_min = 0.1
-    # alpha = 1.5
-    # N = 5000
-    # y = test_power_distribution(y_min, alpha, N)
-    #
-    # print("Done with power distribution!")
-    #
-    # ## Exercise 3:
-    # L_RW = 50
-    # iter_RW = 10
-    # time = simulate_RW(L_RW, iter_RW)
-    # mean_time = np.mean(time)
+    ## Exercise 2:
+    y_min = 0.01
+    alpha = 1.5
+    N = 5000
+    test_power_distribution(y_min, alpha, N)
+
+    print("Done with power distribution!")
+
+    ## Exercise 3:
+    L_RW = 50
+    iter_RW = 10
+    time = simulate_RW(L_RW, iter_RW)
+    mean_time = np.mean(time)
+
+    ## Exercise 4:
