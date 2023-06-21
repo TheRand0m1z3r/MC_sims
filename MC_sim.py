@@ -59,7 +59,8 @@ class IsingModel:
                 self.energy += e_diff
                 self.magnet += self.model[*spin]
             else:
-                print("Didn't flip")
+                pass
+                # print("Didn't flip")
 
 
     def metropolis(self):
@@ -83,26 +84,47 @@ class IsingModel:
         return magnetiz, energyz
 
 
+    def wolff(self):
+        cell_choice = rng.integers(L, size=[it, 2])
+        for cell in cell_choice:
+            
+
+        return
+
+
 if __name__ == '__main__':
 
     L = int(1e2)
     # starting_model = (rng.random([L, L]) < 0.5) * 2 - 1
     # M_start = np.sum(starting_model)
     J = 1
-    it = int(1000)
+    it = int(1000000)
     timer = np.linspace(0, it, it)
     # # Tc = 2J / (k * np.log(1 + np.sqrt(2)))
-    T = 500
+    T = np.logspace(0, 1, 6)
     # # t = (T - Tc) / Tc
     # E_start = total_energy(starting_model, L, J)
     # eq_model, E_tot, M = metropolis(starting_model, L, J, T, it, M_start)
-    model = IsingModel(T, J, L, it)
-    mag, ene = model.metropolis()
+    for t in T:
+        print(t)
+        model = IsingModel(t, J, L, it)
+        mag, ene = model.metropolis()
 
-    plt.plot(timer, mag, label='magnet')
-    plt.legend()
-    plt.show()
-    plt.figure()
-    plt.plot(timer, ene, label='energy')
-    plt.legend()
-    plt.show()
+        plt.figure()
+        plt.plot(timer, mag, label='magnet')
+        plt.title(f'T = {t}')
+        plt.legend()
+        # plt.show()
+        #
+        # plt.figure()
+        plt.plot(timer, ene, label='energy')
+        plt.title(f'T = {t}')
+        plt.legend()
+        plt.show()
+
+        plt.figure()
+        plt.pcolormesh(model.model)
+        plt.title(f'T = {t}')
+        plt.show()
+
+
