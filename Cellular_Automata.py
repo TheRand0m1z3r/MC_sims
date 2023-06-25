@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import simpson
 from scipy.linalg import lstsq
-from scipy.optimize import nnls
+from scipy.optimize import nnls, curve_fit
 
 rng = np.random.default_rng()
 
@@ -66,6 +66,7 @@ def NS_Algo(L, N_cars, v_max, iterations, P=.0):
 
 def power_distribution(y_min, alpha, N=1):
     ## This returns a power distribution with a minimum value of y_min and a power of alpha
+    ## N is the number of samples to return
 
     k = alpha * y_min**alpha
     x = rng.random(N)
@@ -121,29 +122,135 @@ def simulate_RW(L, iterations):
     return t
 
 
-def sand_pile_model(L, max_grain=3, iterations=1000):
-    ## This function simulates the sand pile model on a lattice of size m x n
+def sand_pile_model(size, max_grain=3, iterations=1000):
+    ## This function simulates the sand pile model on a lattice of size LxL
 
-    def topple(lattice, y, x, outer_border_x=False, outer_border_y=False):
+    def topple(lattice, y, x, it):
+        toppled[it] += 1
+        # print("topple")
         ## This function topples the lattice at a given site with open boundary conditions
-
-        if not (outer_border_x & outer_border_y):
+        if not ((x == L-1) or (x == 0) or (y == L-1) or (y == 0)):
             lattice[y+1, x] += 1
+            if lattice[y+1, x] > max_grain:
+                lattice[y+1, x] = 0
+                topple(lattice, y+1, x, it)
             lattice[y-1, x] += 1
+            if lattice[y-1, x] > max_grain:
+                lattice[y-1, x] = 0
+                topple(lattice, y-1, x, it)
             lattice[y, x+1] += 1
+            if lattice[y, x+1] > max_grain:
+                lattice[y, x+1] = 0
+                topple(lattice, y, x+1, it)
             lattice[y, x-1] += 1
-            ## To be continued
+            if lattice[y, x-1] > max_grain:
+                lattice[y, x-1] = 0
+                topple(lattice, y, x-1, it)
+        elif (x == L-1) and (y == L-1):
+            lattice[y-1, x] += 1
+            if lattice[y-1, x] > max_grain:
+                lattice[y-1, x] = 0
+                topple(lattice, y-1, x, it)
+            lattice[y, x-1] += 1
+            if lattice[y, x-1] > max_grain:
+                lattice[y, x-1] = 0
+                topple(lattice, y, x-1, it)
+        elif (x == L-1) and (y == 0):
+            lattice[y+1, x] += 1
+            if lattice[y+1, x] > max_grain:
+                lattice[y+1, x] = 0
+                topple(lattice, y+1, x, it)
+            lattice[y, x-1] += 1
+            if lattice[y, x-1] > max_grain:
+                lattice[y, x-1] = 0
+                topple(lattice, y, x-1, it)
+        elif (x == 0) and (y == L-1):
+            lattice[y-1, x] += 1
+            if lattice[y-1, x] > max_grain:
+                lattice[y-1, x] = 0
+                topple(lattice, y-1, x, it)
+            lattice[y, x+1] += 1
+            if lattice[y, x+1] > max_grain:
+                lattice[y, x+1] = 0
+                topple(lattice, y, x+1, it)
+        elif (x == 0) and (y == 0):
+            lattice[y+1, x] += 1
+            if lattice[y+1, x] > max_grain:
+                lattice[y+1, x] = 0
+                topple(lattice, y+1, x, it)
+            lattice[y, x+1] += 1
+            if lattice[y, x+1] > max_grain:
+                lattice[y, x+1] = 0
+                topple(lattice, y, x+1, it)
+        elif (x == L-1):
+            lattice[y+1, x] += 1
+            if lattice[y+1, x] > max_grain:
+                lattice[y+1, x] = 0
+                topple(lattice, y+1, x, it)
+            lattice[y-1, x] += 1
+            if lattice[y-1, x] > max_grain:
+                lattice[y-1, x] = 0
+                topple(lattice, y-1, x, it)
+            lattice[y, x-1] += 1
+            if lattice[y, x-1] > max_grain:
+                lattice[y, x-1] = 0
+                topple(lattice, y, x-1, it)
+        elif (x == 0):
+            lattice[y+1, x] += 1
+            if lattice[y+1, x] > max_grain:
+                lattice[y+1, x] = 0
+                topple(lattice, y+1, x, it)
+            lattice[y-1, x] += 1
+            if lattice[y-1, x] > max_grain:
+                lattice[y-1, x] = 0
+                topple(lattice, y-1, x, it)
+            lattice[y, x+1] += 1
+            if lattice[y, x+1] > max_grain:
+                lattice[y, x+1] = 0
+                topple(lattice, y, x+1, it)
+        elif (y == L-1):
+            lattice[y-1, x] += 1
+            if lattice[y-1, x] > max_grain:
+                lattice[y-1, x] = 0
+                topple(lattice, y-1, x, it)
+            lattice[y, x+1] += 1
+            if lattice[y, x+1] > max_grain:
+                lattice[y, x+1] = 0
+                topple(lattice, y, x+1, it)
+            lattice[y, x-1] += 1
+            if lattice[y, x-1] > max_grain:
+                lattice[y, x-1] = 0
+                topple(lattice, y, x-1, it)
+        elif (y == 0):
+            lattice[y+1, x] += 1
+            if lattice[y+1, x] > max_grain:
+                lattice[y+1, x] = 0
+                topple(lattice, y+1, x, it)
+            lattice[y, x+1] += 1
+            if lattice[y, x+1] > max_grain:
+                lattice[y, x+1] = 0
+                topple(lattice, y, x+1, it)
+            lattice[y, x-1] += 1
+            if lattice[y, x-1] > max_grain:
+                lattice[y, x-1] = 0
+                topple(lattice, y, x-1, it)
+
         return lattice
 
+    toppled = np.zeros(iterations)
     lattice = np.zeros([L, L])
-    dump_sites = rng.integers(0, L, size=[iterations, 2]) # First column is y, second column is x
+    dump_sites = rng.integers(0, L, size=[iterations, 2])  # First column is y, second column is x
 
     for i in range(iterations):
+        # print(i, 'out of', iterations)
         lattice[tuple(dump_sites[i])] += 1
         if lattice[tuple(dump_sites[i])] > max_grain:
-            lattice[tuple(dump_sites[i])] -= max_grain + 1
-            lattice = topple(lattice, *dump_sites[i])
-    return lattice
+            lattice[tuple(dump_sites[i])] -= (max_grain + 1)
+            lattice = topple(lattice, *dump_sites[i], i)
+    return lattice, toppled
+
+def func_powerlaw(x, tau, c, c0):
+    return c * x**(-tau) + c0
 
 if __name__ == '__main__':
     # print("Lets go!")
@@ -241,6 +348,30 @@ if __name__ == '__main__':
     # mean_time = np.mean(time)
 
     ## Exercise 4:
-    L = 100
+    print("Lets go!")
+    L = 50
 
-    lat = sand_pile_model(L, iterations=1000000)
+    lat, top = sand_pile_model(L, iterations=int(5e5))
+    histo, bins = np.histogram(top, 'sqrt')    ## I have to make sure in bins there are is 0
+    popt, pcov = curve_fit(func_powerlaw, bins[1:], histo, p0=[1, np.max(histo), np.min(histo)],
+                           bounds=([0.5,np.max(histo)/10, np.min(histo)], [2, np.max( histo)*10, np.max(histo)]))
+
+
+    plt.figure()
+    plt.pcolormesh(lat)
+    plt.title("Sand pile model")
+    plt.ylabel("y")
+    plt.xlabel("x")
+    plt.savefig("sand_pile_model.png")
+    plt.close()
+
+    plt.figure()
+    plt.plot(top)
+    histogram = plt.hist("Topples")
+    plt.ylabel("Number of topples")
+    plt.xlabel("Iteration")
+    plt.savefig("toppling.png")
+    plt.close()
+
+
+    print("Done with sand pile model!")
