@@ -249,8 +249,8 @@ def sand_pile_model(size, max_grain=3, iterations=1000):
             lattice = topple(lattice, *dump_sites[i], i)
     return lattice, toppled
 
-def func_powerlaw(x, tau, c, c0):
-    return c * x**(-tau) + c0
+def func_powerlaw(x, tau, c):
+    return c * x**(-tau)
 
 if __name__ == '__main__':
     # print("Lets go!")
@@ -351,27 +351,36 @@ if __name__ == '__main__':
     print("Lets go!")
     L = 50
 
-    lat, top = sand_pile_model(L, iterations=int(5e5))
+    lat, top = sand_pile_model(L, iterations=int(1e6))
     histo, bins = np.histogram(top, 'sqrt')    ## I have to make sure in bins there are is 0
-    popt, pcov = curve_fit(func_powerlaw, bins[1:], histo, p0=[1, np.max(histo), np.min(histo)],
-                           bounds=([0.5,np.max(histo)/10, np.min(histo)], [2, np.max( histo)*10, np.max(histo)]))
+    popt, pcov = curve_fit(func_powerlaw, bins[1:], histo, p0=[1, np.max(histo)], bounds=([0.5,np.max(histo)/1e4],
+                                                                                          [1.5, np.max(histo)*1e2]))
 
+
+    # plt.figure()
+    # plt.pcolormesh(lat)
+    # plt.title("Sand pile model")
+    # plt.ylabel("y")
+    # plt.xlabel("x")
+    # # plt.savefig("sand_pile_model.png")
+    # plt.close()
+    #
+    # plt.figure()
+    # plt.plot(top)
+    # histogram = plt.hist("Topples")
+    # plt.ylabel("Number of topples")
+    # plt.xlabel("Iteration")
+    # # plt.savefig("toppling.png")
+    # plt.close()
 
     plt.figure()
-    plt.pcolormesh(lat)
-    plt.title("Sand pile model")
-    plt.ylabel("y")
-    plt.xlabel("x")
-    plt.savefig("sand_pile_model.png")
-    plt.close()
-
-    plt.figure()
-    plt.plot(top)
-    histogram = plt.hist("Topples")
-    plt.ylabel("Number of topples")
-    plt.xlabel("Iteration")
-    plt.savefig("toppling.png")
-    plt.close()
+    plt.loglog(bins[1:], histo, label="Data")
+    plt.loglog(bins[1:], func_powerlaw(bins[1:], *popt), label="Fit")
+    plt.title("Power law fit")
+    plt.xlabel("Number of topples")
+    plt.ylabel("Occurences")
+    plt.legend()
+    plt.savefig("power_law_fit.png")
 
 
     print("Done with sand pile model!")
