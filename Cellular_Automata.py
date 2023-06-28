@@ -381,6 +381,7 @@ if __name__ == '__main__':
     plt.ylabel("Occurences")
     plt.legend()
     plt.savefig("power_law_fit.png")
+    plt.show()
 
 
     print("Done with sand pile model!")
