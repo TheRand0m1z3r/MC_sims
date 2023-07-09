@@ -19,6 +19,7 @@ class IsingModel:
         self.t = (T - self.T_c) / self.T_c
         # self.E_start = total_energy(self.starting_model, L, J)
         self.energy = 0
+        self.flip_cells = np.zeros([1, 2])
         if it:
             self.iter = it
         else:
@@ -83,11 +84,36 @@ class IsingModel:
             loop += 1
         return magnetiz, energyz
 
+    def flip_wolff(self, cell):
+        P_add = np.zeros(4)
+        P_check = rng.random(4)
+        if self.model[(cell[0] + 1) % self.L, cell[1]] == self.model[cell[0], cell[1]]:
+            P_add[0] = 1 - np.exp(-2 * self.J / (k * self.t))
+            if P_check[0] < P_add[0]:
+                self.flip_cells = np.vstack((self.flip_cells, [(cell[0] + 1) % self.L, cell[1]]))
+        if self.model[(cell[0] - 1) % self.L, cell[1]] == self.model[cell[0], cell[1]]:
+            P_add[1] = 1 - np.exp(-2 * self.J / (k * self.t))
+            if P_check[1] < P_add[1]:
+                self.flip_cells = np.vstack((self.flip_cells, [(cell[0] - 1) % self.L, cell[1]]))
+        if self.model[cell[0], (cell[1] + 1) % self.L] == self.model[cell[0], cell[1]]:
+            P_add[2] = 1 - np.exp(-2 * self.J / (k * self.t))
+            if P_check[2] < P_add[2]:
+                self.flip_cells = np.vstack((self.flip_cells, [cell[0], (cell[1] + 1) % self.L]))
+        if self.model[cell[0], (cell[1] - 1) % self.L] == self.model[cell[0], cell[1]]:
+            P_add[3] = 1 - np.exp(-2 * self.J / (k * self.t))
+            if P_check[3] < P_add[3]:
+                self.flip_cells = np.vstack((self.flip_cells, [cell[0], (cell[1] - 1) % self.L]))
+
+        return
 
     def wolff(self):
         cell_choice = rng.integers(L, size=[it, 2])
         for cell in cell_choice:
-            
+            self.flip_cells = cell
+            for flip in self.flip_cells:
+                self.flip_wolff(flip)
+
+            self.model[self.flip_cells[:, 0], self.flip_cells[:, 1]] *= -1
 
         return
 
@@ -98,8 +124,9 @@ if __name__ == '__main__':
     # starting_model = (rng.random([L, L]) < 0.5) * 2 - 1
     # M_start = np.sum(starting_model)
     J = 1
-    it = int(1000000)
+    it = int(1000)
     timer = np.linspace(0, it, it)
+    ## T_C is somewhere around 2.269
     # # Tc = 2J / (k * np.log(1 + np.sqrt(2)))
     T = np.logspace(0, 1, 6)
     # # t = (T - Tc) / Tc
@@ -107,24 +134,25 @@ if __name__ == '__main__':
     # eq_model, E_tot, M = metropolis(starting_model, L, J, T, it, M_start)
     for t in T:
         print(t)
-        model = IsingModel(t, J, L, it)
-        mag, ene = model.metropolis()
-
-        plt.figure()
-        plt.plot(timer, mag, label='magnet')
-        plt.title(f'T = {t}')
-        plt.legend()
+        # model_ising = IsingModel(t, J, L, it)
+        # mag_ising, ene_ising = model_ising.metropolis()
+        #
+        # plt.figure()
+        # plt.plot(timer, mag_ising, label='magnet')
+        # plt.title(f'T = {t}')
+        # plt.legend()
+        # # plt.show()
+        # #
+        # # plt.figure()
+        # plt.plot(timer, ene_ising, label='energy')
+        # plt.title(f'T = {t}')
+        # plt.legend()
         # plt.show()
         #
         # plt.figure()
-        plt.plot(timer, ene, label='energy')
-        plt.title(f'T = {t}')
-        plt.legend()
-        plt.show()
+        # plt.pcolormesh(model_ising.model)
+        # plt.title(f'T = {t}')
+        # plt.show()
 
-        plt.figure()
-        plt.pcolormesh(model.model)
-        plt.title(f'T = {t}')
-        plt.show()
-
-
+        model_wolff = IsingModel(t, J, L, it)
+        mag_wolff, ene_wolff = model_wolff.wolff()

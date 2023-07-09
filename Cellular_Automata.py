@@ -1,9 +1,11 @@
 import numpy as np
+import sys
 import matplotlib.pyplot as plt
 from scipy.integrate import simpson
 from scipy.linalg import lstsq
 from scipy.optimize import nnls, curve_fit
 
+sys.setrecursionlimit(10000)
 rng = np.random.default_rng()
 
 
@@ -127,113 +129,141 @@ def sand_pile_model(size, max_grain=3, iterations=1000):
 
     def topple(lattice, y, x, it):
         toppled[it] += 1
+        try:
+            lattice[y+1, x] += 1
+            if lattice[y+1, x] > max_grain:
+                lattice[y+1, x] = 0
+                topple(lattice, y+1, x, it)
+        except IndexError:
+            pass
+        try:
+            lattice[y-1, x] += 1
+            if lattice[y-1, x] > max_grain:
+                lattice[y-1, x] = 0
+                topple(lattice, y-1, x, it)
+        except IndexError:
+            pass
+        try:
+            lattice[y, x+1] += 1
+            if lattice[y, x+1] > max_grain:
+                lattice[y, x+1] = 0
+                topple(lattice, y, x+1, it)
+        except IndexError:
+            pass
+        try:
+            lattice[y, x-1] += 1
+            if lattice[y, x-1] > max_grain:
+                lattice[y, x-1] = 0
+                topple(lattice, y, x-1, it)
+        except IndexError:
+            pass
         # print("topple")
         ## This function topples the lattice at a given site with open boundary conditions
-        if not ((x == L-1) or (x == 0) or (y == L-1) or (y == 0)):
-            lattice[y+1, x] += 1
-            if lattice[y+1, x] > max_grain:
-                lattice[y+1, x] = 0
-                topple(lattice, y+1, x, it)
-            lattice[y-1, x] += 1
-            if lattice[y-1, x] > max_grain:
-                lattice[y-1, x] = 0
-                topple(lattice, y-1, x, it)
-            lattice[y, x+1] += 1
-            if lattice[y, x+1] > max_grain:
-                lattice[y, x+1] = 0
-                topple(lattice, y, x+1, it)
-            lattice[y, x-1] += 1
-            if lattice[y, x-1] > max_grain:
-                lattice[y, x-1] = 0
-                topple(lattice, y, x-1, it)
-        elif (x == L-1) and (y == L-1):
-            lattice[y-1, x] += 1
-            if lattice[y-1, x] > max_grain:
-                lattice[y-1, x] = 0
-                topple(lattice, y-1, x, it)
-            lattice[y, x-1] += 1
-            if lattice[y, x-1] > max_grain:
-                lattice[y, x-1] = 0
-                topple(lattice, y, x-1, it)
-        elif (x == L-1) and (y == 0):
-            lattice[y+1, x] += 1
-            if lattice[y+1, x] > max_grain:
-                lattice[y+1, x] = 0
-                topple(lattice, y+1, x, it)
-            lattice[y, x-1] += 1
-            if lattice[y, x-1] > max_grain:
-                lattice[y, x-1] = 0
-                topple(lattice, y, x-1, it)
-        elif (x == 0) and (y == L-1):
-            lattice[y-1, x] += 1
-            if lattice[y-1, x] > max_grain:
-                lattice[y-1, x] = 0
-                topple(lattice, y-1, x, it)
-            lattice[y, x+1] += 1
-            if lattice[y, x+1] > max_grain:
-                lattice[y, x+1] = 0
-                topple(lattice, y, x+1, it)
-        elif (x == 0) and (y == 0):
-            lattice[y+1, x] += 1
-            if lattice[y+1, x] > max_grain:
-                lattice[y+1, x] = 0
-                topple(lattice, y+1, x, it)
-            lattice[y, x+1] += 1
-            if lattice[y, x+1] > max_grain:
-                lattice[y, x+1] = 0
-                topple(lattice, y, x+1, it)
-        elif (x == L-1):
-            lattice[y+1, x] += 1
-            if lattice[y+1, x] > max_grain:
-                lattice[y+1, x] = 0
-                topple(lattice, y+1, x, it)
-            lattice[y-1, x] += 1
-            if lattice[y-1, x] > max_grain:
-                lattice[y-1, x] = 0
-                topple(lattice, y-1, x, it)
-            lattice[y, x-1] += 1
-            if lattice[y, x-1] > max_grain:
-                lattice[y, x-1] = 0
-                topple(lattice, y, x-1, it)
-        elif (x == 0):
-            lattice[y+1, x] += 1
-            if lattice[y+1, x] > max_grain:
-                lattice[y+1, x] = 0
-                topple(lattice, y+1, x, it)
-            lattice[y-1, x] += 1
-            if lattice[y-1, x] > max_grain:
-                lattice[y-1, x] = 0
-                topple(lattice, y-1, x, it)
-            lattice[y, x+1] += 1
-            if lattice[y, x+1] > max_grain:
-                lattice[y, x+1] = 0
-                topple(lattice, y, x+1, it)
-        elif (y == L-1):
-            lattice[y-1, x] += 1
-            if lattice[y-1, x] > max_grain:
-                lattice[y-1, x] = 0
-                topple(lattice, y-1, x, it)
-            lattice[y, x+1] += 1
-            if lattice[y, x+1] > max_grain:
-                lattice[y, x+1] = 0
-                topple(lattice, y, x+1, it)
-            lattice[y, x-1] += 1
-            if lattice[y, x-1] > max_grain:
-                lattice[y, x-1] = 0
-                topple(lattice, y, x-1, it)
-        elif (y == 0):
-            lattice[y+1, x] += 1
-            if lattice[y+1, x] > max_grain:
-                lattice[y+1, x] = 0
-                topple(lattice, y+1, x, it)
-            lattice[y, x+1] += 1
-            if lattice[y, x+1] > max_grain:
-                lattice[y, x+1] = 0
-                topple(lattice, y, x+1, it)
-            lattice[y, x-1] += 1
-            if lattice[y, x-1] > max_grain:
-                lattice[y, x-1] = 0
-                topple(lattice, y, x-1, it)
+        # if not ((x == L-1) or (x == 0) or (y == L-1) or (y == 0)):
+        #     lattice[y+1, x] += 1
+        #     if lattice[y+1, x] > max_grain:
+        #         lattice[y+1, x] = 0
+        #         topple(lattice, y+1, x, it)
+        #     lattice[y-1, x] += 1
+        #     if lattice[y-1, x] > max_grain:
+        #         lattice[y-1, x] = 0
+        #         topple(lattice, y-1, x, it)
+        #     lattice[y, x+1] += 1
+        #     if lattice[y, x+1] > max_grain:
+        #         lattice[y, x+1] = 0
+        #         topple(lattice, y, x+1, it)
+        #     lattice[y, x-1] += 1
+        #     if lattice[y, x-1] > max_grain:
+        #         lattice[y, x-1] = 0
+        #         topple(lattice, y, x-1, it)
+        # elif (x == L-1) and (y == L-1):
+        #     lattice[y-1, x] += 1
+        #     if lattice[y-1, x] > max_grain:
+        #         lattice[y-1, x] = 0
+        #         topple(lattice, y-1, x, it)
+        #     lattice[y, x-1] += 1
+        #     if lattice[y, x-1] > max_grain:
+        #         lattice[y, x-1] = 0
+        #         topple(lattice, y, x-1, it)
+        # elif (x == L-1) and (y == 0):
+        #     lattice[y+1, x] += 1
+        #     if lattice[y+1, x] > max_grain:
+        #         lattice[y+1, x] = 0
+        #         topple(lattice, y+1, x, it)
+        #     lattice[y, x-1] += 1
+        #     if lattice[y, x-1] > max_grain:
+        #         lattice[y, x-1] = 0
+        #         topple(lattice, y, x-1, it)
+        # elif (x == 0) and (y == L-1):
+        #     lattice[y-1, x] += 1
+        #     if lattice[y-1, x] > max_grain:
+        #         lattice[y-1, x] = 0
+        #         topple(lattice, y-1, x, it)
+        #     lattice[y, x+1] += 1
+        #     if lattice[y, x+1] > max_grain:
+        #         lattice[y, x+1] = 0
+        #         topple(lattice, y, x+1, it)
+        # elif (x == 0) and (y == 0):
+        #     lattice[y+1, x] += 1
+        #     if lattice[y+1, x] > max_grain:
+        #         lattice[y+1, x] = 0
+        #         topple(lattice, y+1, x, it)
+        #     lattice[y, x+1] += 1
+        #     if lattice[y, x+1] > max_grain:
+        #         lattice[y, x+1] = 0
+        #         topple(lattice, y, x+1, it)
+        # elif (x == L-1):
+        #     lattice[y+1, x] += 1
+        #     if lattice[y+1, x] > max_grain:
+        #         lattice[y+1, x] = 0
+        #         topple(lattice, y+1, x, it)
+        #     lattice[y-1, x] += 1
+        #     if lattice[y-1, x] > max_grain:
+        #         lattice[y-1, x] = 0
+        #         topple(lattice, y-1, x, it)
+        #     lattice[y, x-1] += 1
+        #     if lattice[y, x-1] > max_grain:
+        #         lattice[y, x-1] = 0
+        #         topple(lattice, y, x-1, it)
+        # elif (x == 0):
+        #     lattice[y+1, x] += 1
+        #     if lattice[y+1, x] > max_grain:
+        #         lattice[y+1, x] = 0
+        #         topple(lattice, y+1, x, it)
+        #     lattice[y-1, x] += 1
+        #     if lattice[y-1, x] > max_grain:
+        #         lattice[y-1, x] = 0
+        #         topple(lattice, y-1, x, it)
+        #     lattice[y, x+1] += 1
+        #     if lattice[y, x+1] > max_grain:
+        #         lattice[y, x+1] = 0
+        #         topple(lattice, y, x+1, it)
+        # elif (y == L-1):
+        #     lattice[y-1, x] += 1
+        #     if lattice[y-1, x] > max_grain:
+        #         lattice[y-1, x] = 0
+        #         topple(lattice, y-1, x, it)
+        #     lattice[y, x+1] += 1
+        #     if lattice[y, x+1] > max_grain:
+        #         lattice[y, x+1] = 0
+        #         topple(lattice, y, x+1, it)
+        #     lattice[y, x-1] += 1
+        #     if lattice[y, x-1] > max_grain:
+        #         lattice[y, x-1] = 0
+        #         topple(lattice, y, x-1, it)
+        # elif (y == 0):
+        #     lattice[y+1, x] += 1
+        #     if lattice[y+1, x] > max_grain:
+        #         lattice[y+1, x] = 0
+        #         topple(lattice, y+1, x, it)
+        #     lattice[y, x+1] += 1
+        #     if lattice[y, x+1] > max_grain:
+        #         lattice[y, x+1] = 0
+        #         topple(lattice, y, x+1, it)
+        #     lattice[y, x-1] += 1
+        #     if lattice[y, x-1] > max_grain:
+        #         lattice[y, x-1] = 0
+        #         topple(lattice, y, x-1, it)
 
         return lattice
 
@@ -242,10 +272,12 @@ def sand_pile_model(size, max_grain=3, iterations=1000):
     dump_sites = rng.integers(0, L, size=[iterations, 2])  # First column is y, second column is x
 
     for i in range(iterations):
+        if i % 1000 == 0:
+            print(i, 'out of', iterations)
         # print(i, 'out of', iterations)
         lattice[tuple(dump_sites[i])] += 1
         if lattice[tuple(dump_sites[i])] > max_grain:
-            lattice[tuple(dump_sites[i])] -= (max_grain + 1)
+            lattice[tuple(dump_sites[i])] = 0
             lattice = topple(lattice, *dump_sites[i], i)
     return lattice, toppled
 
@@ -253,105 +285,105 @@ def func_powerlaw(x, tau, c):
     return c - tau * x
 
 if __name__ == '__main__':
-    print("Lets go!")
-    # ## Exercise 1:
-    L_lane = 1000
-    N_cars = np.array([100, 200, 333, 500, 666, 800, 900])
-    v = np.linspace(0, 2, 3)
-    v_max = 2
-    iter_traffic = 1500
-    P = 0.05
-
-    means_no_slowing = np.zeros(len(N_cars))
-    means_slowing = np.zeros(len(N_cars))
-    flux_no_slowing = np.zeros([len(N_cars), iter_traffic])
-    flux_slowing = np.zeros([len(N_cars), iter_traffic])
-    flux_linalg = np.zeros(len(N_cars))
-    conc = np.zeros([len(N_cars), 3])
-
-    for N in N_cars:
-        road, flux_no_slowing[np.where(N_cars == N), :] = NS_Algo(L_lane, N, v_max, iter_traffic)
-        means_no_slowing[np.where(N_cars == N)] = np.mean(flux_no_slowing[np.where(N_cars == N)])
-
-        plt.figure()
-        plt.pcolormesh(road)
-        plt.title("N = " + str(N) + " cars")
-        plt.ylabel("Time")
-        plt.xlabel("Road")
-        plt.savefig(str(N) + "_cars_no_slowing.png")
-        plt.close()
-
-        plt.figure()
-        plt.plot(flux_no_slowing[np.where(N_cars == N)][0])
-        plt.title("flux vs time, N = " + str(N) + " cars, no slowing")
-        plt.ylabel("flux")
-        plt.xlabel("time")
-        plt.savefig(str(N) + "_cars_flux_no_slowing.png")
-        plt.close()
-
-        road, flux_slowing[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic, P)
-        means_slowing[np.where(N_cars == N)] = np.mean(flux_slowing[np.where(N_cars == N)])
-
-        plt.figure()
-        plt.pcolormesh(road)
-        plt.title("N = " + str(N) + " cars")
-        plt.ylabel("Time")
-        plt.xlabel("Road")
-        plt.savefig(str(N) + "_cars_rand_" + str(P) + ".png")
-        plt.close()
-
-        plt.figure()
-        plt.plot(flux_slowing[np.where(N_cars == N)][0])
-        plt.title("flux vs time, N = " + str(N) + " cars, P = " + str(P))
-        plt.ylabel("flux")
-        plt.xlabel("time")
-        plt.savefig(str(N) + "_cars_flux_rand_" + str(P) + ".png")
-        plt.close()
-
-        ## Calculate expected from mean-field theory (Schreckenberg, 1995, Phys. Rev, E 51, 2939)
-        c = N / L_lane
-        d = 1 - c
-        q = 1 - P
-
-        conc[np.where(N_cars == N), 0] = c**2 * (1 + P * d)/(1 - P * d**2)
-        conc[np.where(N_cars == N), 1] = q *c**2 *d * (1 + d + P * d**2)/((1 - P * d**3) * (1 - P * d**2))
-        conc[np.where(N_cars == N), 2] = q**2 * c**2 * d**3 * (1 + d + d**2 * P)/((1 - q * d**2) * (1 - P * d**3) *
-                                                                                   (1 - P * d**2))
-
-    flux_linalg = np.sum(conc * v, axis=1)
-
-    plt.figure()
-    plt.plot(N_cars/L_lane, means_no_slowing, label="No slowing")
-    plt.plot(N_cars/L_lane, means_slowing, label="Slowing")
-    plt.plot(N_cars/L_lane, flux_linalg, label="Rate equations")
-    plt.title("flux vs density")
-    plt.ylabel("flux")
-    plt.xlabel("density")
-    plt.legend()
-    plt.savefig("flux_vs_density.png")
-    plt.show()
-
-    print("Done with traffic jams!")
-
-    ## Exercise 2:
-    y_min = 0.01
-    alpha = 1.5
-    N = 5000
-    test_power_distribution(y_min, alpha, N)
-
-    print("Done with power distribution!")
-
-    ## Exercise 3:
-    L_RW = 50
-    iter_RW = 10
-    time = simulate_RW(L_RW, iter_RW)
-    mean_time = np.mean(time)
+    # print("Lets go!")
+    # # ## Exercise 1:
+    # L_lane = 1000
+    # N_cars = np.array([100, 200, 333, 500, 666, 800, 900])
+    # v = np.linspace(0, 2, 3)
+    # v_max = 2
+    # iter_traffic = 1500
+    # P = 0.05
+    #
+    # means_no_slowing = np.zeros(len(N_cars))
+    # means_slowing = np.zeros(len(N_cars))
+    # flux_no_slowing = np.zeros([len(N_cars), iter_traffic])
+    # flux_slowing = np.zeros([len(N_cars), iter_traffic])
+    # flux_linalg = np.zeros(len(N_cars))
+    # conc = np.zeros([len(N_cars), 3])
+    #
+    # for N in N_cars:
+    #     road, flux_no_slowing[np.where(N_cars == N), :] = NS_Algo(L_lane, N, v_max, iter_traffic)
+    #     means_no_slowing[np.where(N_cars == N)] = np.mean(flux_no_slowing[np.where(N_cars == N)])
+    #
+    #     plt.figure()
+    #     plt.pcolormesh(road)
+    #     plt.title("N = " + str(N) + " cars")
+    #     plt.ylabel("Time")
+    #     plt.xlabel("Road")
+    #     plt.savefig(str(N) + "_cars_no_slowing.png")
+    #     plt.close()
+    #
+    #     plt.figure()
+    #     plt.plot(flux_no_slowing[np.where(N_cars == N)][0])
+    #     plt.title("flux vs time, N = " + str(N) + " cars, no slowing")
+    #     plt.ylabel("flux")
+    #     plt.xlabel("time")
+    #     plt.savefig(str(N) + "_cars_flux_no_slowing.png")
+    #     plt.close()
+    #
+    #     road, flux_slowing[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic, P)
+    #     means_slowing[np.where(N_cars == N)] = np.mean(flux_slowing[np.where(N_cars == N)])
+    #
+    #     plt.figure()
+    #     plt.pcolormesh(road)
+    #     plt.title("N = " + str(N) + " cars")
+    #     plt.ylabel("Time")
+    #     plt.xlabel("Road")
+    #     plt.savefig(str(N) + "_cars_rand_" + str(P) + ".png")
+    #     plt.close()
+    #
+    #     plt.figure()
+    #     plt.plot(flux_slowing[np.where(N_cars == N)][0])
+    #     plt.title("flux vs time, N = " + str(N) + " cars, P = " + str(P))
+    #     plt.ylabel("flux")
+    #     plt.xlabel("time")
+    #     plt.savefig(str(N) + "_cars_flux_rand_" + str(P) + ".png")
+    #     plt.close()
+    #
+    #     ## Calculate expected from mean-field theory (Schreckenberg, 1995, Phys. Rev, E 51, 2939)
+    #     c = N / L_lane
+    #     d = 1 - c
+    #     q = 1 - P
+    #
+    #     conc[np.where(N_cars == N), 0] = c**2 * (1 + P * d)/(1 - P * d**2)
+    #     conc[np.where(N_cars == N), 1] = q *c**2 *d * (1 + d + P * d**2)/((1 - P * d**3) * (1 - P * d**2))
+    #     conc[np.where(N_cars == N), 2] = q**2 * c**2 * d**3 * (1 + d + d**2 * P)/((1 - q * d**2) * (1 - P * d**3) *
+    #                                                                                (1 - P * d**2))
+    #
+    # flux_linalg = np.sum(conc * v, axis=1)
+    #
+    # plt.figure()
+    # plt.plot(N_cars/L_lane, means_no_slowing, label="No slowing")
+    # plt.plot(N_cars/L_lane, means_slowing, label="Slowing")
+    # plt.plot(N_cars/L_lane, flux_linalg, label="Rate equations")
+    # plt.title("flux vs density")
+    # plt.ylabel("flux")
+    # plt.xlabel("density")
+    # plt.legend()
+    # plt.savefig("flux_vs_density.png")
+    # plt.show()
+    #
+    # print("Done with traffic jams!")
+    #
+    # ## Exercise 2:
+    # y_min = 0.01
+    # alpha = 1.5
+    # N = 5000
+    # test_power_distribution(y_min, alpha, N)
+    #
+    # print("Done with power distribution!")
+    #
+    # ## Exercise 3:
+    # L_RW = 50
+    # iter_RW = 10
+    # time = simulate_RW(L_RW, iter_RW)
+    # mean_time = np.mean(time)
 
     ## Exercise 4:
     print("Lets go!")
     L = 128
 
-    lat, top = sand_pile_model(L, iterations=int(1e5))
+    lat, top = sand_pile_model(L, iterations=int(5e4))
     histo, bins = np.histogram(top, 'sqrt')    ## I have to make sure in bins there are is 0
     bins[0] += 1e-10
     popt, pcov = curve_fit(func_powerlaw, np.log(bins[:-1]), np.log(histo), p0=[1, histo[1]],
@@ -363,7 +395,7 @@ if __name__ == '__main__':
     plt.ylabel("y")
     plt.xlabel("x")
     plt.colorbar()
-    # plt.savefig("sand_pile_model.png")
+    plt.savefig("sand_pile_model.png")
     plt.show()
     #
     # plt.figure()
@@ -381,7 +413,7 @@ if __name__ == '__main__':
     plt.xlabel("Number of topples")
     plt.ylabel("Occurences")
     plt.legend()
-    # plt.savefig("power_law_fit.png")
+    plt.savefig("power_law_fit.png")
     plt.show()
     plt.show()
 
