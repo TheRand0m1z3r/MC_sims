@@ -163,6 +163,36 @@ def simulate_wolff(L, J, it, Ts = 26):
         print(f'E = {Es[ind]}, M = {Ms[ind]}')
     return spec_ene, spec_mag, Es, Ms, Cs, Chis, T
 
+def find_Tc(L, J, it):
+    T_c = 0
+    T = np.linspace(1, 3.5, 21)
+    for ind in prange(len(T)):
+        print(T[ind])
+        model_ising = IsingModel(T[ind], J, L, it)
+        _, _, U, M, C_v, chi = model_ising.metropolis()
+
+    return T_c
+
+def exercise_1():
+    ## Loop over lattice sizes
+    Ls = np.array([20, 50, 75, 100, 125, 150])
+    J = 1
+    it_ising = int(1e5)
+    Tc_L = np.zeros(len(Ls))
+    for ind, L in enumerate(Ls):
+        print(f'L = {L}')
+        Tc_L[ind] = find_Tc(L, J, it_ising)
+
+    return
+
+def exercise_2():
+    return
+
+def exercise_3():
+    return
+
+def exercise_4():
+    return
 
 
 if __name__ == '__main__':
@@ -172,15 +202,13 @@ if __name__ == '__main__':
     # M_start = np.sum(starting_model)
     J = 1
     it_ising = int(5e4)
-    it_wolff = int(1e5)
+    # it_wolff = int(1e5)
     ene_list_ising, mag_list_ising, U_ising, M_ising, C_v_ising, chi_ising, T_ising = simulate_Ising(L, J, it_ising)
-    ene_list_wolff, mag_list_wolff, U_wolff, M_wolff, C_v_wolff, chi_wolff, T_wolff = simulate_wolff(L, J, it_wolff)
-    # EI, MI, TI = simulate_Ising(L, J, it)
-    # EW, MW, TW = simulate_wolff(L, J, it, 11)
+    # ene_list_wolff, mag_list_wolff, U_wolff, M_wolff, C_v_wolff, chi_wolff, T_wolff = simulate_wolff(L, J, it_wolff)
 
     plt.figure()
     plt.plot(T_ising, M_ising, '*', label='Ising')
-    plt.plot(T_wolff, np.sign(M_ising)[0]*M_wolff, '*', label='Wolff')
+    # plt.plot(T_wolff, np.sign(M_ising)[0]*M_wolff, '*', label='Wolff')
     plt.title(f'Magnetization')
     plt.legend()
     plt.savefig(r'./magnetization.png')
@@ -188,7 +216,7 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(T_ising, U_ising, '*', label='Ising')
-    plt.plot(T_wolff, U_wolff, '*', label='Wolff')
+    # plt.plot(T_wolff, U_wolff, '*', label='Wolff')
     plt.title(f'Energy')
     plt.legend()
     plt.savefig(r'./energy.png')
@@ -196,7 +224,7 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(T_ising, C_v_ising, '*', label='Ising')
-    plt.plot(T_wolff, C_v_wolff, '*', label='Wolff')
+    # plt.plot(T_wolff, C_v_wolff, '*', label='Wolff')
     plt.title(f'Specific heat')
     plt.legend()
     plt.savefig(r'./specific_heat.png')
@@ -204,7 +232,7 @@ if __name__ == '__main__':
 
     plt.figure()
     plt.plot(T_ising, chi_ising, '*', label='Ising')
-    plt.plot(T_wolff, chi_wolff, '*', label='Wolff')
+    # plt.plot(T_wolff, chi_wolff, '*', label='Wolff')
     plt.title(f'Susceptibility')
     plt.legend()
     plt.savefig(r'./susceptibility.png')
