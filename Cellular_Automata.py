@@ -5,7 +5,7 @@ from scipy.integrate import simpson
 from scipy.linalg import lstsq
 from scipy.optimize import nnls, curve_fit
 
-sys.setrecursionlimit(10000)
+sys.setrecursionlimit(100000)
 rng = np.random.default_rng()
 
 
