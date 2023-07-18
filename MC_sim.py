@@ -33,6 +33,7 @@ class IsingModel:
                 self.energy -= self.J * self.model[i, j] * np.sum(self.model[nbr[:, 0], nbr[:, 1]])
         # print(self.energy)
 
+
     def flipper(self, spin, acceptor):
         vec = np.array([[1, 0], [-1, 0], [0, 1], [0, -1]])
         nn = (spin+vec) % self.L
@@ -179,6 +180,28 @@ def find_beta(m, tc, t):
     return beta
 def linear(x, a, b):
     return a * x + b
+
+def exercise_1():
+    ## Loop over lattice sizes
+    Ls = np.array([20, 50, 75, 100, 125, 150])
+    J = 1
+    it_ising = int(1e5)
+    Tc_L = np.zeros(len(Ls))
+    for ind, L in enumerate(Ls):
+        print(f'L = {L}')
+        Tc_L[ind] = find_Tc(L, J, it_ising)
+
+    return
+
+def exercise_2():
+    return
+
+def exercise_3():
+    return
+
+def exercise_4():
+    return
+
 
 if __name__ == '__main__':
     T = np.linspace(0.1, 10, 26)
