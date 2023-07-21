@@ -181,15 +181,17 @@ def find_beta(m, tc, t):
 def linear(x, a, b):
     return a * x + b
 
+def xy_model():
+    return
 def exercise_1():
-    ## Loop over lattice sizes
-    Ls = np.array([20, 50, 75, 100, 125, 150])
-    J = 1
-    it_ising = int(1e5)
-    Tc_L = np.zeros(len(Ls))
-    for ind, L in enumerate(Ls):
-        print(f'L = {L}')
-        Tc_L[ind] = find_Tc(L, J, it_ising)
+    # ## Loop over lattice sizes
+    # Ls = np.array([20, 50, 75, 100, 125, 150])
+    # J = 1
+    # it_ising = int(1e5)
+    # Tc_L = np.zeros(len(Ls))
+    # for ind, L in enumerate(Ls):
+    #     print(f'L = {L}')
+    #     Tc_L[ind] = find_Tc(L, J, it_ising)
 
     return
 
