@@ -8,11 +8,16 @@ import scipy.optimize as spo
 rng = default_rng()
 k = 1
 class IsingModel:
-    def __init__(self, T, J, L, it):
+    def __init__(self, T, J, L, it, xy=False):
         # self.starting_model = (rng.random([int(L), int(L)]) < 0.5) * 2 - 1
-        self.starting_model = np.ones([L, L]) * -1
+        if not xy:
+            self.starting_model = np.ones([L, L])
+            self.M_start = np.sum(self.starting_model)
+        else:
+            self.starting_model = rng.random([int(L), int(L)]) * 2 * np.pi
+            self.M_start = np.sum(np.sin(self.starting_model))
+
         self.model = np.copy(self.starting_model)
-        self.M_start = np.sum(self.starting_model)
         self.magnet = np.copy(self.M_start)
         self.J = J
         self.L = L
@@ -26,42 +31,58 @@ class IsingModel:
         else:
             self.iter = int(1e6)
 
-    def total_energy(self):
+    def total_energy(self, xy=False):
         for i in prange(self.L):
             for j in prange(self.L):
                 nbr = (np.array([[1, 0], [0, 1]]) + [i, j]) % self.L
-                self.energy -= self.J * self.model[i, j] * np.sum(self.model[nbr[:, 0], nbr[:, 1]])
-        # print(self.energy)
+                if not xy:
+                    self.energy -= self.J * self.model[i, j] * np.sum(self.model[nbr[:, 0], nbr[:, 1]])
+                else:
+                    self.energy -= self.J * np.sum(np.matmul([np.cos(self.model[i, j]), np.sin(self.model[i, j])],
+                                                             [np.cos(self.model[nbr[:, 0], nbr[:, 1]]),
+                                                              np.sin(self.model[nbr[:, 0], nbr[:, 1]])]))
 
+        return
 
-    def flipper(self, spin, acceptor):
+    def flipper(self, spin, acceptor, xy=False):
         vec = np.array([[1, 0], [-1, 0], [0, 1], [0, -1]])
         nn = (spin+vec) % self.L
-        e_diff = np.sum(self.model[nn[:, 0], nn[:, 1]]) * self.model[*spin] * 2 * self.J
+        if not xy:
+            e_diff = self.model[*spin] * np.sum(self.model[nn[:, 0], nn[:, 1]]) * 2 * self.J
+        else:
+            theta_plane = rng.random() * 2 * np.pi
+            old_e = self.J * np.sum(np.matmul([np.cos(self.model[*spin]), np.sin(self.model[*spin])],
+                                    [np.cos(self.model[nn[:, 0], nn[:, 1]]), np.sin(self.model[nn[:, 0], nn[:, 1]])]))
+            delta_theta = theta_plane - self.model[*spin]
+            new_theta = self.model[*spin] + 2 * delta_theta
+            new_e = self.J * np.sum(np.matmul([np.cos(new_theta), np.sin(new_theta)],
+                                    [np.cos(self.model[nn[:, 0], nn[:, 1]]), np.sin(self.model[nn[:, 0], nn[:, 1]])]))
+            e_diff = new_e - old_e
         boltz_prob = np.exp(-e_diff / (k * self.t))
         if e_diff <= 0 or acceptor < boltz_prob:
-            self.model[*spin] *= -1
+            if not xy:
+                self.model[*spin] *= -1
+                self.magnet += self.model[*spin]
+            else:
+                self.magnet += np.sin(new_theta) - np.sin(self.model[*spin])
+                self.model[*spin] = new_theta
             self.energy += e_diff
-            # print(self.energy)
-            # self.total_energy()
-            self.magnet += self.model[*spin]
 
-    def metropolis(self):
+    def metropolis(self, xy=False):
         magnetiz, energyz = np.zeros(int(self.iter*0.9)), np.zeros(int(self.iter*0.9))
         spin_choice = rng.integers(self.L, size=[self.iter, 2])
         accept_values = rng.random(self.iter)
         # eq_model, sys_energy, M =
         # self.flipper(spin_choice[0], accept_values[0], sys_energy, T, M_start)
-        self.total_energy()
+        self.total_energy(xy)
         loop = 0
         ## equilibrate
         for spin in spin_choice[:int(0.1 * self.iter)]:
-            self.flipper(spin, accept_values[loop])
-            # loop += 1
+            self.flipper(spin, accept_values[loop], xy)
 
         ## simulate
         for spin in spin_choice[int(0.1 * self.iter):]:
-            self.flipper(spin, accept_values[loop])
+            self.flipper(spin, accept_values[loop], xy)
             magnetiz[loop] = self.magnet
             energyz[loop] = self.energy
             loop += 1
