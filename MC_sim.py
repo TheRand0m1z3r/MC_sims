@@ -7,6 +7,9 @@ import scipy.optimize as spo
 
 rng = default_rng()
 k = 1
+
+# Reflection about a line: s_n = s - 2(s \dot r)r
+
 class IsingModel:
     def __init__(self, T, J, L, it, xy=False):
         # self.starting_model = (rng.random([int(L), int(L)]) < 0.5) * 2 - 1
