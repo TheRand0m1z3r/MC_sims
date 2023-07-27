@@ -1,9 +1,11 @@
 import numpy as np
 import sys
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('TkAgg')
 from scipy.integrate import simpson
 from scipy.linalg import lstsq
 from scipy.optimize import nnls, curve_fit
+import matplotlib.pyplot as plt
 
 sys.setrecursionlimit(100000)
 rng = np.random.default_rng()
@@ -72,28 +74,32 @@ def power_distribution(y_min, alpha, N=1):
 
     k = alpha * y_min**alpha
     x = rng.random(N)
-    y = (1 / (y_min**(-alpha) - (alpha/k) * x))**(1/alpha)
+    y = y_min / np.power(1 - x, 1/alpha) #  (1 / (y_min**(-alpha) - (alpha/k) * x))**(1/alpha)
 
     return y
 
 
-def test_power_distribution(y_min, alpha, N=10000):
+def test_power_distribution(y_min, alpha):
     ## This tests the power distribution function by plotting a histogram of the results
 
     k = alpha * y_min**alpha
-
-    y = power_distribution(y_min, alpha, N)
-    x = np.linspace(y_min, np.max(y), N)
+    numbers = np.logspace(3, 6, 4)
+    mean_x = np.zeros(4)
+    for i in range(4):
+        y = power_distribution(y_min, alpha, int(numbers[i]))
+        mean_x[i] = np.mean(y)
+    x = np.linspace(y_min, np.max(y), int(numbers[-1]))
     y_theory = k * x ** (-(alpha + 1))
     print(simpson(y_theory, x))
-
+    print(mean_x)
     plt.figure()
     plt.hist(y, bins=100, density=True, label="Simulation")
-    plt.plot(x, y_theory, 'r')
-    plt.title("Power Distribution Histogram")
+    plt.plot(x, y_theory, 'r', label='Expected')
+    # plt.title("Power Distribution Histogram")
     plt.ylabel("Count")
     plt.xlabel("y")
-    # plt.savefig("Power_Distribution_Histogram.png")
+    plt.legend()
+    plt.savefig("Power_Distribution_Histogram_alpha_" + str(alpha) + "_ymin_" + str(y_min) + ".png")
     plt.show()
     # plt.close()
 
@@ -365,13 +371,13 @@ if __name__ == '__main__':
     #
     # print("Done with traffic jams!")
     #
-    # ## Exercise 2:
-    # y_min = 0.01
-    # alpha = 1.5
-    # N = 5000
-    # test_power_distribution(y_min, alpha, N)
-    #
-    # print("Done with power distribution!")
+    ## Exercise 2:
+    y_min = 0.01
+    alpha = 5
+    # N = int(1e6)
+    test_power_distribution(y_min, alpha)
+
+    print("Done with power distribution!")
     #
     # ## Exercise 3:
     # L_RW = 50
@@ -380,42 +386,42 @@ if __name__ == '__main__':
     # mean_time = np.mean(time)
 
     ## Exercise 4:
-    print("Lets go!")
-    L = 128
-
-    lat, top = sand_pile_model(L, iterations=int(5e4))
-    histo, bins = np.histogram(top, 'sqrt')    ## I have to make sure in bins there are is 0
-    bins[0] += 1e-10
-    popt, pcov = curve_fit(func_powerlaw, np.log(bins[:-1]), np.log(histo), p0=[1, histo[1]],
-                           bounds=([0.5, histo[1]/10], [1.5, histo[1]*10]))
-
-    plt.figure()
-    plt.pcolormesh(lat, cmap='Greys')
-    plt.title("Sand pile model")
-    plt.ylabel("y")
-    plt.xlabel("x")
-    plt.colorbar()
-    plt.savefig("sand_pile_model.png")
-    plt.show()
+    # print("Lets go!")
+    # L = 128
+    #
+    # lat, top = sand_pile_model(L, iterations=int(5e4))
+    # histo, bins = np.histogram(top, 'sqrt')    ## I have to make sure in bins there are is 0
+    # bins[0] += 1e-10
+    # popt, pcov = curve_fit(func_powerlaw, np.log(bins[:-1]), np.log(histo), p0=[1, histo[1]],
+    #                        bounds=([0.5, histo[1]/10], [1.5, histo[1]*10]))
     #
     # plt.figure()
-    # plt.plot(top)
-    # histogram = plt.hist("Topples")
-    # plt.ylabel("Number of topples")
-    # plt.xlabel("Iteration")
-    # # plt.savefig("toppling.png")
-    # plt.close()
-
-    plt.figure()
-    plt.loglog(bins[1:], histo, '.', label="Data")
-    plt.loglog(bins[1:], func_powerlaw(bins[1:], *popt), label="Fit")
-    plt.title("Power law fit")
-    plt.xlabel("Number of topples")
-    plt.ylabel("Occurences")
-    plt.legend()
-    plt.savefig("power_law_fit.png")
-    plt.show()
-    plt.show()
-
-
-    print("Done with sand pile model!")
+    # plt.pcolormesh(lat, cmap='Greys')
+    # plt.title("Sand pile model")
+    # plt.ylabel("y")
+    # plt.xlabel("x")
+    # plt.colorbar()
+    # plt.savefig("sand_pile_model.png")
+    # plt.show()
+    # #
+    # # plt.figure()
+    # # plt.plot(top)
+    # # histogram = plt.hist("Topples")
+    # # plt.ylabel("Number of topples")
+    # # plt.xlabel("Iteration")
+    # # # plt.savefig("toppling.png")
+    # # plt.close()
+    #
+    # plt.figure()
+    # plt.loglog(bins[1:], histo, '.', label="Data")
+    # plt.loglog(bins[1:], func_powerlaw(bins[1:], *popt), label="Fit")
+    # plt.title("Power law fit")
+    # plt.xlabel("Number of topples")
+    # plt.ylabel("Occurences")
+    # plt.legend()
+    # plt.savefig("power_law_fit.png")
+    # plt.show()
+    # plt.show()
+    #
+    #
+    # print("Done with sand pile model!")
