@@ -12,7 +12,7 @@ rng = np.random.default_rng()
 
 def ex_1():
     L_lane = 1000
-    N_cars = np.array([100, 200, 333, 500, 666, 800, 900])
+    N_cars = np.linspace(0, 1000, 51, dtype=int)
     v = np.linspace(0, 2, 3)
     v_max = 2
     iter_traffic = 1500
@@ -25,7 +25,6 @@ def ex_1():
     flux_no_slowing = np.zeros([len(N_cars), iter_traffic])
     flux_slowing = np.zeros([len(N_cars), iter_traffic])
     flux_po = np.zeros([len(N_cars), iter_traffic])
-    flux_linalg = np.zeros(len(N_cars))
     conc = np.zeros([len(N_cars), 3])
 
     for N in N_cars:
@@ -37,54 +36,6 @@ def ex_1():
 
         road_po, flux_po[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic, P, P_po)
         means_po[np.where(N_cars == N)] = np.mean(flux_po[np.where(N_cars == N)])
-
-        # plt.figure()
-        # plt.imshow(road_no_slowing)
-        # plt.title("N = " + str(N) + " cars")
-        # plt.ylabel("Time")
-        # plt.xlabel("Road")
-        # plt.savefig(str(N) + "_cars_no_slowing.png")
-        # plt.close()
-        #
-        # plt.figure()
-        # plt.plot(flux_no_slowing[np.where(N_cars == N)][0])
-        # plt.title("flux vs time, N = " + str(N) + " cars, no slowing")
-        # plt.ylabel("flux")
-        # plt.xlabel("time")
-        # plt.savefig(str(N) + "_cars_flux_no_slowing.png")
-        # plt.close()
-        #
-        # plt.figure()
-        # plt.imshow(road_slowing)
-        # plt.title("N = " + str(N) + " cars")
-        # plt.ylabel("Time")
-        # plt.xlabel("Road")
-        # plt.savefig(str(N) + "_cars_rand_" + str(P) + ".png")
-        # plt.close()
-        #
-        # plt.figure()
-        # plt.plot(flux_slowing[np.where(N_cars == N)][0])
-        # plt.title("flux vs time, N = " + str(N) + " cars, P = " + str(P))
-        # plt.ylabel("flux")
-        # plt.xlabel("time")
-        # plt.savefig(str(N) + "_cars_flux_rand_" + str(P) + ".png")
-        # plt.close()
-        #
-        # plt.figure()
-        # plt.imshow(road_po)
-        # plt.title("N = " + str(N) + " cars")
-        # plt.ylabel("Time")
-        # plt.xlabel("Road")
-        # plt.savefig(str(N) + "_cars_rand_" + str(P) + "_po_" + str(P_po) + ".png")
-        # plt.close()
-        #
-        # plt.figure()
-        # plt.plot(flux_po[np.where(N_cars == N)][0])
-        # plt.title("flux vs time, N = " + str(N) + " cars, P = " + str(P) + ", P_po = " + str(P_po))
-        # plt.ylabel("flux")
-        # plt.xlabel("time")
-        # plt.savefig(str(N) + "_cars_flux_rand_" + str(P) + "_po_" + str(P_po) + ".png")
-        # plt.close()
 
         fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
         ax1.imshow(road_no_slowing)
@@ -145,59 +96,76 @@ def ex_2():
 
 
 def ex_3():
-    L_RW = 50
-    iter_RW = 10
+    print("Lets go ex. 3!")
+    L_RW = 25
+    iter_RW = 10000
     time = simulate_RW(L_RW, iter_RW)
     mean_time = np.mean(time)
+    print("Mean time for random walk with L = %i and %i iterations is %.3f" % (L_RW, iter_RW, mean_time))
+    abs_err = np.abs(mean_time - L_RW ** 2)/L_RW ** 2 * 100
+    print("Absolute error is %.3f percent" % abs_err)
     return mean_time
 
 
-# def ex_4():
-#     print("Lets go!")
-#     L = 128
-#
-#     lat, top = sand_pile_model(L, iterations=int(1e4))
-#     histo, bins = np.histogram(top, np.linspace(1e-10, 10, 21))    ## I have to make sure in bins there are are no 0
-#     plt.figure()
-#     plt.hist(top, 'sqrt')
-#     bins[0] += 1e-10
-#     log_bins = np.log(bins[:-1])
-#     log_bins[np.where(log_bins == 0)] += 1e-10
-#     log_histo = np.log(histo)
-#     print(log_histo)
-#     print(log_bins)
-#     popt, pcov = curve_fit(func_powerlaw, log_bins, log_histo, p0=[1, histo[1]],
-#                            bounds=([0.5, histo[1]/10], [1.5, histo[1]*10]))
-#
-#     plt.figure()
-#     plt.pcolormesh(lat, cmap='Greys')
-#     plt.title("Sand pile model")
-#     plt.ylabel("y")
-#     plt.xlabel("x")
-#     plt.colorbar()
-#     plt.savefig("sand_pile_model.png")
-#     plt.show()
-#     #
-#     # plt.figure()
-#     # plt.plot(top)
-#     # histogram = plt.hist("Topples")
-#     # plt.ylabel("Number of topples")
-#     # plt.xlabel("Iteration")
-#     # # plt.savefig("toppling.png")
-#     # plt.close()
-#
-#     plt.figure()
-#     plt.loglog(bins[1:], histo, '.', label="Data")
-#     plt.loglog(bins[1:], func_powerlaw(bins[1:], *popt), label="Fit")
-#     plt.title("Power law fit")
-#     plt.xlabel("Number of topples")
-#     plt.ylabel("Occurences")
-#     plt.legend()
-#     plt.savefig("power_law_fit.png")
-#     plt.show()
-#
-#
-#     print("Done with sand pile model!")
+def ex_4():
+    print("Lets go ex. 4!")
+    L = 128
+    lat, top = sand_pile_model(L, iterations=int(1e5))
+    histo, bins = np.histogram(top, np.linspace(1e-10, np.max(top), int(np.max(top))+1))
+
+    new_histo = histo[np.nonzero(histo)]  # Remove zeros so we can curve fit
+    new_bins = bins[1:][np.nonzero(histo)]
+    log_bins = np.log(new_bins)
+    log_histo = np.log(new_histo)
+    log_bins[np.where(log_bins == 0)] += 1e-10
+    log_histo[np.where(log_histo == 0)] += 1e-10
+
+    popt, pcov = curve_fit(func_powerlaw, log_bins[log_bins < 5], log_histo[log_bins < 5],
+                           p0=[2, np.max(log_histo)])
+
+    plt.figure()
+    plt.pcolormesh(lat, cmap='Greys')
+    plt.ylabel("y")
+    plt.xlabel("x")
+    plt.colorbar()
+    plt.savefig("sand_pile_model.png")
+    plt.show()
+
+    # plt.figure()
+    # plt.loglog(new_bins, new_histo, '.', label="Data")
+    # plt.loglog(new_bins, np.exp(func_powerlaw(log_bins, *popt)), label="Fit - tau = %.3f $\pm$ %.3f" % (popt[0],
+    #                                                                                                     np.diag(pcov)[0]))
+    # plt.xlabel("Number of topples")
+    # plt.ylabel("Occurences")
+    # plt.legend()
+    plt.figure()
+    plt.loglog(new_bins[log_bins < 5], new_histo[log_bins < 5], '.', label="Data")
+    plt.loglog(new_bins[log_bins < 5], np.exp(func_powerlaw(log_bins[log_bins < 5], *popt)),
+               label="Fit - tau = %.3f $\pm$ %.3f" % (popt[0], np.diag(pcov)[0]))
+    plt.xlabel("Number of topples")
+    plt.ylabel("Occurences")
+    plt.legend()
+    plt.savefig("power_law_fit.png")
+    plt.show()
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+    ax1.pcolormesh(lat, cmap='Greys')
+    ax1.set_ylabel("y")
+    ax1.set_xlabel("x")
+
+    ax2.loglog(new_bins[log_bins < 2.5], new_histo[log_bins < 2.5], '.', label="Data")
+    ax2.loglog(new_bins[log_bins < 2.5], np.exp(func_powerlaw(log_bins[log_bins < 2.5], *popt)),
+                label="Fit - tau = %.3f $\pm$ %.3f" % (popt[0], np.diag(pcov)[0]))
+    ax2.set_xlabel("Number of topples")
+    ax2.set_ylabel("Occurences")
+    ax2.legend()
+    plt.savefig("sand_pile_model_and_fit.png")
+    plt.show()
+
+
+    print('Done w. 4')
+
+    return new_bins, new_histo, popt, log_histo, log_bins
 
 
 def NS_Algo(L, N_cars, v_max, iterations, P=.0, pull_over=0.):
@@ -293,6 +261,7 @@ def test_power_distribution(y_min, alpha):
     print(simpson(y_theory, x))
     print(mean_x)
     print(mean_theory)
+
     plt.figure()
     plt.hist(y, bins=100, density=True, label="Simulation")
     plt.plot(x, y_theory, 'r', label='Expected')
@@ -310,7 +279,7 @@ def simulate_RW(L, iterations):
     t = np.zeros(iterations)
 
     for i in range(iterations):
-        print("Iteration: " + str(i+1))
+        # print("Iteration: " + str(i+1))
         lattice = np.zeros(L)
         lattice[0] = 1
         is_in_sys = True
@@ -479,7 +448,7 @@ def sand_pile_model(size_L, max_grain=3, iterations=1000):
     dump_sites = rng.integers(0, size_L, size=[iterations, 2])  # First column is y, second column is x
 
     for i in range(iterations):
-        if i % 100000 == 0:
+        if i % 12500 == 0:
             print(i, 'out of', iterations)
         lattice[tuple(dump_sites[i])] += 1
         if lattice[tuple(dump_sites[i])] > max_grain:
@@ -493,43 +462,11 @@ def func_powerlaw(x, tau, c):
 
 
 if __name__ == '__main__':
-    # ## Exercise 1:
-    # ex_1()
+    ## Exercise 1:
+    ex_1()
     # ## Exercise 2:
-    # ex_2()
-    ## Exercise 3:
-    # mean_t = ex_3()
-    # print('Done w. 3')
-    ## Exercise 4:
-    # ex_4()
-    print("Lets go!")
-    L = 128
-    lat, top = sand_pile_model(L, iterations=int(1e6))
-    histo, bins = np.histogram(top, np.linspace(1e-10, np.max(top), int(np.max(top))+1))
-
-    new_histo = histo[np.nonzero(histo)]  # Remove zeros so we can curve fit
-    new_bins = bins[1:][np.nonzero(histo)]
-    log_bins = np.log(new_bins)
-    log_histo = np.log(new_histo)
-    log_bins[np.where(log_bins == 0)] += 1e-10
-    log_histo[np.where(log_histo == 0)] += 1e-10
-    popt, pcov = curve_fit(func_powerlaw, log_bins, log_histo)
-
-    plt.figure()
-    plt.pcolormesh(lat, cmap='Greys')
-    plt.ylabel("y")
-    plt.xlabel("x")
-    plt.colorbar()
-    plt.savefig("sand_pile_model.png")
-    plt.show()
-
-    plt.figure()
-    plt.loglog(new_bins, new_histo, '.', label="Data")
-    plt.loglog(new_bins, np.exp(func_powerlaw(log_bins, *popt)), label="Fit - tau = %.3f" % (popt[0]))
-    plt.xlabel("Number of topples")
-    plt.ylabel("Occurences")
-    plt.legend()
-    plt.savefig("power_law_fit.png")
-    plt.show()
-
-    print('Done w. 4')
+    ex_2()
+    # # Exercise 3:
+    mean_t = ex_3()
+    # Exercise 4:
+    new_bins, new_histo, popt, log_histo, log_bins = ex_4()
