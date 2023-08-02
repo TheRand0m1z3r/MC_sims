@@ -12,7 +12,7 @@ rng = np.random.default_rng()
 
 def ex_1():
     L_lane = 1000
-    N_cars = np.linspace(0, 1000, 51, dtype=int)
+    N_cars = np.linspace(0, 1000, 26, dtype=int)
     v = np.linspace(0, 2, 3)
     v_max = 2
     iter_traffic = 1500
@@ -26,8 +26,10 @@ def ex_1():
     flux_slowing = np.zeros([len(N_cars), iter_traffic])
     flux_po = np.zeros([len(N_cars), iter_traffic])
     conc = np.zeros([len(N_cars), 3])
+    conc_pull_over = np.zeros([len(N_cars), 3])
 
     for N in N_cars:
+        print(N)
         road_no_slowing, flux_no_slowing[np.where(N_cars == N), :] = NS_Algo(L_lane, N, v_max, iter_traffic)
         means_no_slowing[np.where(N_cars == N)] = np.mean(flux_no_slowing[np.where(N_cars == N)])
 
@@ -37,27 +39,27 @@ def ex_1():
         road_po, flux_po[np.where(N_cars == N)] = NS_Algo(L_lane, N, v_max, iter_traffic, P, P_po)
         means_po[np.where(N_cars == N)] = np.mean(flux_po[np.where(N_cars == N)])
 
-        fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
-        ax1.imshow(road_no_slowing)
-        ax1.set_xlabel("Road")
-        ax1.set_ylabel("Time")
-        ax2.imshow(road_slowing)
-        ax2.set_xlabel("Road")
-        ax3.imshow(road_po)
-        ax3.set_xlabel("Road")
-        plt.savefig(str(N) + "_cars_all.png")
-        plt.close()
-
-        fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
-        ax1.plot(flux_no_slowing[np.where(N_cars == N)][0])
-        ax1.set_ylabel("flux")
-        ax2.plot(flux_slowing[np.where(N_cars == N)][0])
-        ax2.set_ylabel("flux")
-        ax3.plot(flux_po[np.where(N_cars == N)][0])
-        ax3.set_ylabel("flux")
-        ax3.set_xlabel("time")
-        plt.savefig(str(N) + "_cars_flux_all.png")
-        plt.close()
+        # fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharey=True)
+        # ax1.imshow(road_no_slowing)
+        # ax1.set_xlabel("Road")
+        # ax1.set_ylabel("Time")
+        # ax2.imshow(road_slowing)
+        # ax2.set_xlabel("Road")
+        # ax3.imshow(road_po)
+        # ax3.set_xlabel("Road")
+        # plt.savefig(str(N) + "_cars_all.png")
+        # plt.close()
+        #
+        # fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True)
+        # ax1.plot(flux_no_slowing[np.where(N_cars == N)][0])
+        # ax1.set_ylabel("flux")
+        # ax2.plot(flux_slowing[np.where(N_cars == N)][0])
+        # ax2.set_ylabel("flux")
+        # ax3.plot(flux_po[np.where(N_cars == N)][0])
+        # ax3.set_ylabel("flux")
+        # ax3.set_xlabel("time")
+        # plt.savefig(str(N) + "_cars_flux_all.png")
+        # plt.close()
 
 
         ## Calculate expected from mean-field theory (Schreckenberg, 1995, Phys. Rev, E 51, 2939)
@@ -68,16 +70,22 @@ def ex_1():
         conc[np.where(N_cars == N), 0] = c ** 2 * (1 + P * d) / (1 - P * d ** 2)
         conc[np.where(N_cars == N), 1] = q * c ** 2 * d * (1 + d + P * d ** 2) / ((1 - P * d ** 3) * (1 - P * d ** 2))
         conc[np.where(N_cars == N), 2] = q ** 2 * c ** 2 * d ** 3 * (1 + d + d ** 2 * P) / (
-                    (1 - q * d ** 2) * (1 - P * d ** 3) *
-                    (1 - P * d ** 2))
+                (1 - q * d ** 2) * (1 - P * d ** 3) *
+                (1 - P * d ** 2))
+
+        conc_pull_over[np.where(N_cars == N), 0] = c**2 * ((1-P_po) + P * d)/(1 - P * d**2)
+        conc_pull_over[np.where(N_cars == N), 1] = (1 - (1 - P) * d**2) * c * (1 - (1 - P_po) * c -P*d) / (1 - P * d**2)
+        conc_pull_over[np.where(N_cars == N), 2] = (1 - (1 - P_po) * c - P*d) * d**2 * (1 - P) * c / (1 - P * d**2)
 
     flux_linalg = np.sum(conc * v, axis=1)
+    flux_linalg_pull_over = np.sum(conc_pull_over * v, axis=1)
 
     plt.figure()
     plt.plot(N_cars / L_lane, means_no_slowing, label="No slowing")
     plt.plot(N_cars / L_lane, means_slowing, label="Slowing")
     plt.plot(N_cars / L_lane, means_po, label="Slowing and pull over")
     plt.plot(N_cars / L_lane, flux_linalg, label="Rate equations")
+    plt.plot(N_cars / L_lane, flux_linalg_pull_over, label="Rate equations, pull over")
     # plt.title("flux vs density")
     plt.ylabel("flux")
     plt.xlabel("density")
@@ -153,9 +161,9 @@ def ex_4():
     ax1.set_ylabel("y")
     ax1.set_xlabel("x")
 
-    ax2.loglog(new_bins[log_bins < 2.5], new_histo[log_bins < 2.5], '.', label="Data")
-    ax2.loglog(new_bins[log_bins < 2.5], np.exp(func_powerlaw(log_bins[log_bins < 2.5], *popt)),
-                label="Fit - tau = %.3f $\pm$ %.3f" % (popt[0], np.diag(pcov)[0]))
+    ax2.loglog(new_bins[log_bins < 5], new_histo[log_bins < 5], '.', label="Data")
+    ax2.loglog(new_bins[log_bins < 5], np.exp(func_powerlaw(log_bins[log_bins < 5], *popt)),
+                label="Fit - tau = %.3f $\pm$ %.3E" % (popt[0], np.diag(pcov)[0]))
     ax2.set_xlabel("Number of topples")
     ax2.set_ylabel("Occurences")
     ax2.legend()
@@ -165,7 +173,7 @@ def ex_4():
 
     print('Done w. 4')
 
-    return new_bins, new_histo, popt, log_histo, log_bins
+    return new_bins, new_histo, popt, pcov, log_histo, log_bins, lat
 
 
 def NS_Algo(L, N_cars, v_max, iterations, P=.0, pull_over=0.):
@@ -465,8 +473,8 @@ if __name__ == '__main__':
     ## Exercise 1:
     ex_1()
     # ## Exercise 2:
-    ex_2()
+    # ex_2()
     # # Exercise 3:
-    mean_t = ex_3()
+    # mean_t = ex_3()
     # Exercise 4:
-    new_bins, new_histo, popt, log_histo, log_bins = ex_4()
+    # new_bins, new_histo, popt, pcov, log_histo, log_bins, pile = ex_4()

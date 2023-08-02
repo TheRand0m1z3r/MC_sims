@@ -2,7 +2,7 @@ import numpy as np
 from numba import prange, jit
 from numpy.random import default_rng
 import matplotlib.pyplot as plt
-import scipy.optimize as spo
+from scipy.optimize import curve_fit
 # from scipy.constants import k
 
 rng = default_rng()
@@ -164,18 +164,18 @@ def simulate_Ising(J, it, Ts = 26):
     L = [20, 50, 75, 100, 150]
     Ls = len(L)
     Tc = np.zeros(Ls)
+    T = np.linspace(0.1, 10, Ts)
+    Ts = len(T)
+    spec_ene, spec_mag = np.zeros([Ls, Ts, int(it * 0.9)]), np.zeros([Ls, Ts, int(it * 0.9)])
+    Es, Ms, Cs, Chis = np.zeros([Ls,Ts]), np.zeros([Ls,Ts]), np.zeros([Ls,Ts]), np.zeros([Ls,Ts])
     for l_ind in prange(Ls):
-        T = np.linspace(0.1, 10, Ts)
-        # T = np.hstack((np.linspace(0.2, 2, 30), np.linspace(3.2, 5.2, 30)))
-        Ts = len(T)
-        spec_ene, spec_mag = np.zeros([Ts, int(it*0.9)]), np.zeros([Ts, int(it*0.9)])
-        Es, Ms, Cs, Chis = np.zeros(Ts), np.zeros(Ts), np.zeros(Ts), np.zeros(Ts)
         for t_ind in prange(Ts):
             print(T[t_ind])
             model_ising = IsingModel(T[t_ind], J, L[l_ind], it)
-            spec_ene[t_ind], spec_mag[t_ind], Es[t_ind], Ms[t_ind], Cs[t_ind], Chis[t_ind] = model_ising.metropolis()
-            print(f'E = {Es[t_ind]}, M = {Ms[t_ind]}')
-        Tc[l_ind] = T[np.nonzero(Chis == np.max(Chis))]
+            spec_ene[l_ind, t_ind], spec_mag[l_ind, t_ind], Es[l_ind, t_ind], Ms[l_ind, t_ind], Cs[l_ind, t_ind], \
+            Chis[l_ind, t_ind] = model_ising.metropolis()
+            print(f'E = {Es[l_ind, t_ind]}, M = {Ms[l_ind, t_ind]}, C_v = {Cs[l_ind, t_ind]}, Chi = {Chis[l_ind, t_ind]}')
+        Tc[l_ind] = T[np.nonzero(Chis[l_ind] == np.max(Chis[l_ind]))]
     return spec_ene, spec_mag, Es, Ms, Cs, Chis, Tc
 
 def simulate_wolff(J, it, Ts = 26):
@@ -191,58 +191,41 @@ def simulate_wolff(J, it, Ts = 26):
             model_wolff = IsingModel(T[t_ind], J, L[l_ind], it)
             spec_ene[t_ind], spec_mag[t_ind], Es[t_ind], Ms[t_ind], Cs[t_ind], Chis[t_ind] = model_wolff.wolff()
             print(f'E = {Es[t_ind]}, M = {Ms[t_ind]}')
-        Tc[l_ind] = T[np.nonzero(Chis == np.max(Chis))]
+        Tc[l_ind] = T[Chis == np.max(Chis)]
 
     return spec_ene, spec_mag, Es, Ms, Cs, Chis, Tc
 
 def find_beta(m, tc, t):
-    num_l = len(tc)
-    beta = np.zeros(num_l)
-    for n in prange(num_l):
-        popt, pcov = spo.curve_fit(linear, np.log(tc[n] - t[t<tc[n]], np.log(m[t<tc[n]])))
-        beta[n] = popt[0]
-    return beta
+    popt, pcov = curve_fit(linear, np.log(tc - t[t<tc]), np.log(m[t<tc]))
+    return popt[0]
+    # num_l = len(tc)
+    # beta = np.zeros(num_l)
+    # for n in prange(num_l):
+    #     popt, pcov = curve_fit(linear, np.log(tc[n] - t[t<tc[n]]), np.log(m[t<tc[n]]))
+    #     beta[n] = popt[0]
+    # return beta
 def linear(x, a, b):
     return a * x + b
 
 def xy_model():
     return
-def exercise_1():
-    # ## Loop over lattice sizes
-    # Ls = np.array([20, 50, 75, 100, 125, 150])
-    # J = 1
-    # it_ising = int(1e5)
-    # Tc_L = np.zeros(len(Ls))
-    # for ind, L in enumerate(Ls):
-    #     print(f'L = {L}')
-    #     Tc_L[ind] = find_Tc(L, J, it_ising)
-
-    return
-
-def exercise_2():
-    return
-
-def exercise_3():
-    return
-
-def exercise_4():
-    return
 
 
 if __name__ == '__main__':
-    T = np.linspace(0.1, 10, 26)
+    T = np.linspace(0.1, 10, 11)
     L_checked = np.array([20, 50, 75, 100, 150])
+    rec_L = 1 / L_checked
     J = 1
-    it_ising = int(5e4)
+    it_ising = int(5e5)
     it_wolff = int(5e4)
-    ene_list_ising, mag_list_ising, U_ising, M_ising, C_v_ising, chi_ising, Tc_ising = simulate_Ising(J, it_ising)
-    ene_list_wolff, mag_list_wolff, U_wolff, M_wolff, C_v_wolff, chi_wolff, Tc_wolff = simulate_wolff(J, it_wolff)
+    ene_list_ising, mag_list_ising, U_ising, M_ising, C_v_ising, chi_ising, Tc_ising = simulate_Ising(J, it_ising,11)
+    ene_list_wolff, mag_list_wolff, U_wolff, M_wolff, C_v_wolff, chi_wolff, Tc_wolff = simulate_wolff(J, it_wolff, 11)
 
     print(f'The crit temps found from the metropolis algo are:\nL - {L_checked}\nT - {Tc_ising}')
     print(f'The crit temps found from the wolff algo are:\nL - {L_checked}\nT - {Tc_wolff}')
 
-    popt_ising, pcov_ising = spo.curve_fit(linear, 1/L_checked, Tc_ising)
-    popt_wolff, pcov_wolff = spo.curve_fit(linear, 1/L_checked, Tc_wolff)
+    popt_ising, pcov_ising = curve_fit(linear, rec_L, Tc_ising)
+    popt_wolff, pcov_wolff = curve_fit(linear, rec_L, Tc_wolff)
 
     Tc_inf_ising = linear(0, *popt_ising)
     Tc_inf_wolff = linear(0, *popt_wolff)
@@ -250,51 +233,70 @@ if __name__ == '__main__':
     print(f'For the Metropolis algo, Tc for an infinite lattice is: {Tc_inf_ising}')
     print(f'For the Wolff algo, Tc for an infinite lattice is: {Tc_inf_wolff}')
 
-    beta_ising = find_beta()
-    beta_wolff = find_beta()
+    beta_ising = find_beta(np.mean(M_ising, axis=0), Tc_inf_ising, T)
+    beta_wolff = find_beta(M_wolff, Tc_inf_wolff, T)
 
     print(f'For the Metropolis algo, beta is: {beta_ising}')
     print(f'For the Wolff algo, beta is: {beta_wolff}')
 
     plt.figure()
-    plt.plot(1/L_checked, Tc_ising, 'o', label='Ising')
-    plt.plot(1/L_checked, linear(1/L_checked, *popt_ising), label='Ising  - fit')
-    plt.plot(1/L_checked, Tc_wolff, 'o', label='Wolff')
-    plt.plot(1/L_checked, linear(1/L_checked, *popt_wolff), label='Wolff  - fit')
+    plt.plot(rec_L, Tc_ising, 'o', label='Ising')
+    plt.plot(rec_L, linear(rec_L, *popt_ising), label='Ising  - fit')
+    plt.plot(rec_L, Tc_wolff, 'o', label='Wolff')
+    plt.plot(rec_L, linear(rec_L, *popt_wolff), label='Wolff  - fit')
+    plt.xlabel(r'$1/L$')
+    plt.ylabel(r'$T_c$')
     plt.legend()
     plt.savefig(r'./Tc_L.png')
     plt.show()
 
-    plt.figure()
-    plt.plot(T, M_ising, '*', label='Ising')
-    # plt.plot(T_wolff, M_wolff, '*', label='Wolff')
-    plt.plot(T, np.sign(M_ising)[0]*M_wolff, '*', label='Wolff')
-    plt.title(f'Magnetization')
-    plt.legend()
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    for i in range(len(L_checked)):
+        ax1.plot(T, M_ising[i], '*', label='Ising - L = ' + str(L_checked[i]))
+    ax2.plot(T, np.sign(M_ising)[0, 0]*M_wolff, '*', label='Wolff')
+    ax1.set_ylabel('M')
+    ax1.legend()
+    ax2.set_xlabel('T')
+    ax2.set_ylabel('M')
+    ax2.legend()
     plt.savefig(r'./magnetization.png')
     plt.show()
 
-    plt.figure()
-    plt.plot(T, U_ising, '*', label='Ising')
-    plt.plot(T, U_wolff, '*', label='Wolff')
-    plt.title(f'Energy')
-    plt.legend()
+    U_wolff[U_wolff < 0] *= -1
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    for i in range(len(L_checked)):
+        ax1.plot(T, U_ising[i], '*', label='Ising - L = ' + str(L_checked[i]))
+    ax1.set_ylabel('U')
+    ax1.legend()
+    ax2.plot(T, U_wolff, '*', label='Wolff')
+    ax2.set_xlabel('T')
+    ax2.set_ylabel('U')
+    ax2.legend()
     plt.savefig(r'./energy.png')
     plt.show()
 
-    plt.figure()
-    plt.plot(T, C_v_ising, '*', label='Ising')
-    plt.plot(T, C_v_wolff, '*', label='Wolff')
-    plt.title(f'Specific heat')
-    plt.legend()
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    for i in range(len(L_checked)):
+        ax1.plot(T, C_v_ising[i], '*', label='Ising - L = ' + str(L_checked[i]))
+    ax1.set_ylabel('$C_v$')
+    ax1.legend()
+    ax2.plot(T, C_v_wolff, '*', label='Wolff')
+    ax2.set_xlabel('T')
+    ax2.set_ylabel('$C_v$')
+    ax2.legend()
     plt.savefig(r'./specific_heat.png')
     plt.show()
 
-    plt.figure()
-    plt.plot(T, chi_ising, '*', label='Ising')
-    plt.plot(T, chi_wolff, '*', label='Wolff')
-    plt.title(f'Susceptibility')
-    plt.legend()
+    chi_wolff[chi_wolff < 0] *= -1
+    fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True)
+    for i in range(len(L_checked)):
+        ax1.plot(T, chi_ising[i, :], '*', label='Ising - L = ' + str(L_checked[i]))
+    ax1.set_ylabel('$\chi$')
+    ax1.legend()
+    ax2.plot(T, chi_wolff, '*', label='Wolff')
+    ax2.set_xlabel('T')
+    ax2.set_ylabel('$\chi$')
+    ax2.legend()
     plt.savefig(r'./susceptibility.png')
     plt.show()
 
